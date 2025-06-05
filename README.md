@@ -1,32 +1,40 @@
-# Next.js + Stripe + Supabase Production-Ready Template
+# UniAi - AI-Powered University Course Planning Platform
 
-A production-ready Next.js template featuring authentication, dark mode support, Stripe integration, and a clean, modern UI. Built with TypeScript and Tailwind CSS.
+An AI-powered platform for creating comprehensive university course plans, generating interactive lessons, and building custom practice tests. Built with Next.js, Stripe, and Supabase for a complete educational experience.
 
 ![License](https://img.shields.io/badge/license-MIT-blue.svg)
 ![Next.js](https://img.shields.io/badge/Next.js-14-black)
 ![TypeScript](https://img.shields.io/badge/TypeScript-5.0-blue)
 ![Tailwind](https://img.shields.io/badge/Tailwind-3.0-38B2AC)
 
-📹 Full YouTube Guide: [Youtube link](https://www.youtube.com/watch?v=ad1BxZufer8&list=PLE9hy4A7ZTmpGq7GHf5tgGFWh2277AeDR&index=8)
-
-🚀 X Post: [X link](https://x.com/ShenSeanChen/status/1895163913161109792)
+🎓 **Transform Your University Experience with AI**
 
 💡 Try the App: [App link](https://mvp.seanchen.io)
 
-☕️ Buy me a coffee: [Cafe Latte](https://buy.stripe.com/5kA176bA895ggog4gh)
 
 ## ✨ Features
 
-- 🔐 Authentication with Supabase
-- 💳 Stripe payment integration
-- 🌓 Dark mode support
-- 📱 Responsive design
-- 🎨 Tailwind CSS styling
-- 🔄 Framer Motion animations
-- 🛡️ TypeScript support
-- 📊 Error boundary implementation
-- 🔍 SEO optimized
-- 🤖 MCP integration for AI-powered development
+- 🎯 **Smart Course Planning**: AI-generated degree roadmaps with prerequisite tracking
+- 📚 **Interactive Lessons**: Auto-generated lessons for every course topic
+- 📝 **Custom Testing**: Personalized practice tests and quizzes
+- 🧠 **AI Tutoring**: Get help whenever you're stuck
+- 📊 **Progress Tracking**: Monitor your academic journey in real-time
+- 👥 **Study Groups**: Connect and collaborate with classmates
+- 🔐 **Secure Authentication**: Student account management with Supabase
+- 💳 **Flexible Pricing**: Stripe-powered subscription plans for students
+- 🌓 **Dark Mode**: Study comfortably day or night
+- 📱 **Mobile Responsive**: Access your courses anywhere
+- 🎨 **Modern UI**: Clean, intuitive interface built with Tailwind CSS
+- 🔄 **Smooth Animations**: Enhanced UX with Framer Motion
+- 🛡️ **Type Safety**: Full TypeScript support
+- 🔍 **SEO Optimized**: Discoverable by search engines
+
+## 🎓 Perfect For
+
+- **Students**: Create comprehensive study plans for any degree program
+- **Universities**: Provide students with AI-powered academic planning tools
+- **Educators**: Generate lesson content and assessments automatically
+- **Academic Advisors**: Help students plan their degree progression
 
 ## 🚀 Getting Started
 
@@ -40,64 +48,44 @@ A production-ready Next.js template featuring authentication, dark mode support,
 
 ### Installation and Setup
 
-1. Clone the template:
+1. Clone the repository:
 
 ```bash
-git clone https://github.com/ShenSeanChen/launch-stripe-nextjs-supabase my-full-stack-app
-cd my-full-stack-app
-rm -rf .git
-git init
-git add .
-git commit -m "Initial commit"
-# git remote add origin https://github.com/ShenSeanChen/my-full-stack-app.git
-git remote add origin https://github.com/USE_YOUR_OWN_GITHUB_NAME/my-full-stack-app.git
-git push -u origin main
-```
-
-2. Install dependencies:
-```bash
+git clone https://github.com/yourusername/uni-ai.git
+cd uni-ai
 npm install
 ```
-or
-```bash
-yarn install
-```
 
-3. Create .env.local with all variables from .env.example
+2. Create .env.local with all variables from .env.example
 ```
-NEXT_PUBLIC_APP_URL=http://localhost:8000
-NEXT_PUBLIC_API_URL=http://localhost:8080
-NEXT_PUBLIC_WS_URL=ws://localhost:8080
+NEXT_PUBLIC_APP_URL=http://localhost:3000
 
 # Supabase Configuration
 NEXT_PUBLIC_SUPABASE_URL=
 NEXT_PUBLIC_SUPABASE_ANON_KEY=
 SUPABASE_SERVICE_ROLE_KEY=
 
-# OpenAI Configuration (you'll need to add your key)
+# OpenAI Configuration (for AI lesson generation)
 OPENAI_API_KEY=
 
 # Stripe Configuration
-# NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=pk_test_
 NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=pk_live_
 NEXT_PUBLIC_STRIPE_BUTTON_ID=buy_btn_
-# STRIPE_SECRET_KEY=sk_test_
 STRIPE_SECRET_KEY=sk_live_
-# STRIPE_WEBHOOK_SECRET=whsec_
 STRIPE_WEBHOOK_SECRET=whsec_
 
-# ANALYTICS
+# Analytics
 NEXT_PUBLIC_POSTHOG_KEY=
 NEXT_PUBLIC_POSTHOG_HOST=https://app.posthog.com
 ```
 
-4. Set up Google Cloud Platform (GCP):
+3. Set up Google Cloud Platform (GCP):
    - Create new OAuth 2.0 credentials in GCP Console
    - Configure authorized JavaScript origins
    - Configure redirect URIs
    - Save the Client ID and Client Secret
 
-5. Configure Supabase:
+4. Configure Supabase:
 
    a. Get API Keys (Project Settings > API):
       - Project URL → NEXT_PUBLIC_SUPABASE_URL
@@ -136,7 +124,7 @@ NEXT_PUBLIC_POSTHOG_HOST=https://app.posthog.com
         FOR EACH ROW EXECUTE FUNCTION public.handle_new_user();
       ```
 
-6. Set up Stripe:
+5. Set up Stripe:
    
    a. Create a live account and configure:
       - Create product in Product Catalog
@@ -153,7 +141,7 @@ NEXT_PUBLIC_POSTHOG_HOST=https://app.posthog.com
       - Subscribe to events: customer.subscription.*, checkout.session.*, invoice.*, payment_intent.*
       - Copy Signing Secret → STRIPE_WEBHOOK_SECRET
 
-8. Start the development server:
+6. Start the development server:
 ```bash
 npm run dev
 ```
@@ -162,7 +150,7 @@ or
 yarn dev
 ```
 
-8. Open [http://localhost:3000](http://localhost:3000) in your browser.
+7. Open [http://localhost:3000](http://localhost:3000) in your browser.
 
 ## 🛠️ MCP Integration Setup
 

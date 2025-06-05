@@ -1,6 +1,7 @@
 {
-  "name": "you-can-build-anything",
+  "name": "uni-ai",
   "version": "0.1.0",
+  "description": "AI-powered university course planning platform for generating degree roadmaps, lessons, and custom tests",
   "private": true,
   "scripts": {
     "dev": "next dev",

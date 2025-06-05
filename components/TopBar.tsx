@@ -7,6 +7,7 @@ import Link from 'next/link';
 import { useSubscription } from '@/hooks/useSubscription';
 import { useTrialStatus } from '@/hooks/useTrialStatus';
 import { BuyMeCoffee } from './BuyMeCoffee';
+import { FaGraduationCap } from 'react-icons/fa6';
 // import { supabase } from '@/utils/supabase';
 
 // TopBar component handles user profile display and navigation
@@ -52,9 +53,9 @@ export default function TopBar() {
   return (
     <div className="w-full bg-surface-light dark:bg-surface-dark border-b border-gray-200 dark:border-gray-700">
       <div className="max-w-7xl mx-auto flex justify-between items-center px-4 py-3">
-        <Link href="/" className="text-md sm:text-lg font-medium text-text dark:text-text-dark flex items-center gap-2 hover:opacity-80 transition-opacity">
-          <span className="text-2xl">🎬</span>
-          <span className="font-sans">NextTemp</span>
+        <Link href="/" className="text-md sm:text-lg font-medium text-text dark:text-text-dark flex items-center gap-3 hover:opacity-80 transition-opacity">
+          <FaGraduationCap className="h-8 w-8 text-primary" />
+          <span className="font-bold text-xl">UniAi</span>
         </Link>
 
         <div className="flex items-center gap-4">
@@ -81,7 +82,7 @@ export default function TopBar() {
                   onClick={() => router.push('/profile')}
                   className="hidden sm:block px-4 py-2 bg-primary hover:bg-primary-dark text-white rounded-full text-sm font-medium transition-colors shadow-subtle hover:shadow-hover"
                 >
-                  View Subscription
+                  Upgrade Plan
                 </button>
               )}
               <BuyMeCoffee />
@@ -93,7 +94,7 @@ export default function TopBar() {
                   onClick={() => router.push('/dashboard')}
                   className="hidden sm:block px-4 py-2 bg-primary hover:bg-primary-dark text-white rounded-full text-sm font-medium transition-colors shadow-subtle hover:shadow-hover"
                 >
-                  {isInTrial ? "Start Free Trial" : "Start Building"}
+                  {isInTrial ? "Start Learning" : "My Courses"}
                 </button>
               )}
               
