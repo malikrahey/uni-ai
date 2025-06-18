@@ -4,7 +4,8 @@ import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { useAuth } from '@/contexts/AuthContext';
 import { useRouter } from 'next/navigation';
-import { useCourses } from '@/hooks/useCourses';
+import { useHomeContent } from '@/hooks/useHomeContent';
+import { DegreeCard } from './DegreeCard';
 import { 
   Plus, 
   BookOpen, 
@@ -26,7 +27,7 @@ import Link from 'next/link';
 export default function CoursesMainPage() {
   const { user, session } = useAuth();
   const router = useRouter();
-  const { courses, isLoading, error } = useCourses();
+  const { degrees, standaloneCourses, userProgress, isLoading, error, refetch } = useHomeContent();
   const [searchTerm, setSearchTerm] = useState("");
   const [showFilters, setShowFilters] = useState(false);
   const [debugInfo, setDebugInfo] = useState<any>(null);
@@ -56,37 +57,36 @@ export default function CoursesMainPage() {
     }
   };
 
-  // Check database setup
-  const checkDatabaseSetup = async () => {
-    try {
-      const response = await fetch('/api/setup-db');
-      const data = await response.json();
-      console.log('Database Setup Response:', data);
-      setDbSetupInfo(data);
-    } catch (error) {
-      console.error('Database setup check failed:', error);
-    }
-  };
+  // // Check database setup
+  // const checkDatabaseSetup = async () => {
+  //   try {
+  //     const response = await fetch('/api/setup-db');
+  //     const data = await response.json();
+  //     console.log('Database Setup Response:', data);
+  //     setDbSetupInfo(data);
+  //   } catch (error) {
+  //     console.error('Database setup check failed:', error);
+  //   }
+  // };
 
   // Test auth and db setup on component mount
   useEffect(() => {
     if (user) {
       testAuth();
-      checkDatabaseSetup();
+      // checkDatabaseSetup();
     }
   }, [user, session]);
 
-  // Filter courses based on search term
-  const filteredCourses = courses.filter(course =>
-    course.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    course.university.toLowerCase().includes(searchTerm.toLowerCase())
+  // Filter content based on search term
+  const filteredDegrees = degrees.filter(degree =>
+    degree.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    degree.description.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  // Calculate aggregate stats
-  const totalCourses = courses.reduce((sum, course) => sum + course.totalCourses, 0);
-  const avgProgress = courses.length > 0 
-    ? Math.round(courses.reduce((sum, course) => sum + course.progress, 0) / courses.length)
-    : 0;
+  const filteredCourses = standaloneCourses.filter(course =>
+    course.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    course.description.toLowerCase().includes(searchTerm.toLowerCase())
+  );
 
   // Handle error state
   if (error) {
@@ -95,7 +95,7 @@ export default function CoursesMainPage() {
         <div className="text-center p-8 bg-white dark:bg-neutral-dark rounded-xl shadow-lg border border-red-200 dark:border-red-800 max-w-lg">
           <AlertCircle className="h-12 w-12 text-red-500 mx-auto mb-4" />
           <h2 className="text-xl font-semibold text-red-700 dark:text-red-400 mb-2">
-            Error Loading Courses
+            Error Loading Content
           </h2>
           <p className="text-red-600 dark:text-red-300 mb-4 text-sm">
             {error}
@@ -134,7 +134,7 @@ export default function CoursesMainPage() {
           
           <div className="flex gap-2 justify-center mt-4 flex-wrap">
             <button
-              onClick={() => window.location.reload()}
+              onClick={() => refetch()}
               className="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors text-sm"
             >
               <RefreshCw className="h-4 w-4 inline mr-2" />
@@ -146,13 +146,13 @@ export default function CoursesMainPage() {
             >
               Test Auth
             </button>
-            <button
+            {/* <button
               onClick={checkDatabaseSetup}
               className="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors text-sm"
             >
               <Database className="h-4 w-4 inline mr-2" />
               Check DB
-            </button>
+            </button> */}
           </div>
         </div>
       </div>
@@ -181,303 +181,200 @@ export default function CoursesMainPage() {
                   {isLoading ? (
                     <Loader className="h-6 w-6 animate-spin mx-auto" />
                   ) : (
-                    courses.length
+                    degrees.length
                   )}
                 </div>
-                <div className="text-sm text-slate-500 dark:text-slate-400">Active Degrees</div>
+                <div className="text-sm text-slate-500 dark:text-slate-400">Degrees</div>
               </div>
               <div className="text-center">
                 <div className="text-2xl font-bold text-primary">
                   {isLoading ? (
                     <Loader className="h-6 w-6 animate-spin mx-auto" />
                   ) : (
-                    totalCourses
+                    standaloneCourses.length
                   )}
                 </div>
-                <div className="text-sm text-slate-500 dark:text-slate-400">Total Courses</div>
+                <div className="text-sm text-slate-500 dark:text-slate-400">Courses</div>
               </div>
               <div className="text-center">
                 <div className="text-2xl font-bold text-primary">
                   {isLoading ? (
                     <Loader className="h-6 w-6 animate-spin mx-auto" />
                   ) : (
-                    `${avgProgress}%`
+                    userProgress.totalLessonsCompleted
                   )}
                 </div>
-                <div className="text-sm text-slate-500 dark:text-slate-400">Avg Progress</div>
+                <div className="text-sm text-slate-500 dark:text-slate-400">Completed</div>
               </div>
             </div>
           </div>
         </div>
       </div>
 
+      {/* Content Section */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Search and Filters */}
-        <div className="mb-8 flex flex-col sm:flex-row gap-4">
-          <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-slate-400" />
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-8">
+          <div className="relative flex-1 max-w-md mb-4 md:mb-0">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-slate-400" />
             <input
               type="text"
-              placeholder="Search your courses..."
+              placeholder="Search degrees and courses..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-10 pr-4 py-3 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-neutral-dark text-slate-900 dark:text-white placeholder-slate-500 focus:ring-2 focus:ring-primary focus:border-transparent"
+              className="w-full pl-10 pr-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent bg-white dark:bg-slate-800 text-slate-900 dark:text-white"
             />
           </div>
-          <button
-            onClick={() => setShowFilters(!showFilters)}
-            className="flex items-center gap-2 px-4 py-3 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-neutral-dark text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-neutral-darker transition-colors"
-          >
-            <Filter className="h-5 w-5" />
-            Filters
-          </button>
-        </div>
-
-        {/* Loading State */}
-        {isLoading && courses.length === 0 && (
-          <div className="flex items-center justify-center py-12">
-            <div className="text-center">
-              <Loader className="h-12 w-12 animate-spin text-primary mx-auto mb-4" />
-              <p className="text-slate-600 dark:text-slate-400">Loading your courses...</p>
-            </div>
-          </div>
-        )}
-
-        {/* Main Content Grid */}
-        {!isLoading || courses.length > 0 ? (
-          <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
-            {/* Create New Course Card */}
-            <motion.div
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
-              className="lg:col-span-1 cursor-pointer"
-              onClick={() => router.push('/course-creation')}
+          
+          <div className="flex items-center space-x-4">
+            <button
+              onClick={() => setShowFilters(!showFilters)}
+              className="flex items-center space-x-2 px-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
             >
-              <div className="h-full p-6 border-2 border-dashed border-primary/30 dark:border-primary/50 rounded-xl bg-primary/5 dark:bg-primary/10 hover:border-primary/50 dark:hover:border-primary/70 hover:bg-primary/10 dark:hover:bg-primary/20 transition-all duration-300">
-                <div className="flex flex-col items-center justify-center h-full min-h-[200px] text-center">
-                  <div className="w-16 h-16 bg-primary/20 dark:bg-primary/30 rounded-full flex items-center justify-center mb-4">
-                    <Plus className="h-8 w-8 text-primary" />
-                  </div>
-                  <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-2">
-                    Create New Degree Plan
-                  </h3>
-                  <p className="text-sm text-slate-600 dark:text-slate-400">
-                    Start your journey with AI-powered course planning
-                  </p>
-                </div>
-              </div>
-            </motion.div>
-
-            {/* Existing Courses */}
-            <div className="lg:col-span-3">
-              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-                {filteredCourses.map((course, index) => (
-                  <motion.div
-                    key={course.id}
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: index * 0.1 }}
-                    whileHover={{ scale: 1.02 }}
-                    className="cursor-pointer"
-                    onClick={() => router.push(`/courses/${course.id}`)}
-                  >
-                    <div className="bg-white dark:bg-neutral-dark rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden hover:shadow-lg transition-shadow">
-                      {/* Course Header with Gradient */}
-                      <div className="h-24 bg-gradient-to-r from-blue-500 to-purple-600 relative">
-                        <div className="absolute inset-0 bg-black/20" />
-                        <div className="absolute bottom-3 left-4 right-4">
-                          <h3 className="text-white font-semibold text-lg truncate">
-                            {course.title}
-                          </h3>
-                          <p className="text-white/80 text-sm">
-                            {course.university}
-                          </p>
-                        </div>
-                      </div>
-
-                      {/* Course Content */}
-                      <div className="p-6">
-                        {/* Progress Bar */}
-                        <div className="mb-4">
-                          <div className="flex justify-between items-center mb-2">
-                            <span className="text-sm font-medium text-slate-700 dark:text-slate-300">
-                              Progress
-                            </span>
-                            <span className="text-sm text-slate-500 dark:text-slate-400">
-                              {course.progress}%
-                            </span>
-                          </div>
-                          <div className="w-full bg-slate-200 dark:bg-slate-700 rounded-full h-2">
-                            <div
-                              className="bg-primary h-2 rounded-full transition-all duration-300"
-                              style={{ width: `${course.progress}%` }}
-                            />
-                          </div>
-                        </div>
-
-                        {/* Course Stats */}
-                        <div className="grid grid-cols-2 gap-4 mb-4 text-sm">
-                          <div className="flex items-center gap-2">
-                            <BookOpen className="h-4 w-4 text-slate-400" />
-                            <span className="text-slate-600 dark:text-slate-400">
-                              {course.completedCourses}/{course.totalCourses} courses
-                            </span>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <Calendar className="h-4 w-4 text-slate-400" />
-                            <span className="text-slate-600 dark:text-slate-400">
-                              {course.degree_type}
-                            </span>
-                          </div>
-                        </div>
-
-                        {/* Course Description */}
-                        {course.description && (
-                          <div className="mb-4">
-                            <p className="text-sm text-slate-600 dark:text-slate-400 line-clamp-2">
-                              {course.description}
-                            </p>
-                          </div>
-                        )}
-
-                        {/* Last Updated */}
-                        <div className="flex items-center justify-between text-xs text-slate-400">
-                          <div className="flex items-center gap-1">
-                            <Clock className="h-3 w-3" />
-                            Updated {new Date(course.updated_at).toLocaleDateString()}
-                          </div>
-                          <div className="flex items-center gap-1">
-                            <TrendingUp className="h-3 w-3" />
-                            On track
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </motion.div>
-                ))}
-              </div>
-            </div>
-          </div>
-        ) : null}
-
-        {/* Empty State */}
-        {!isLoading && courses.length === 0 && (
-          <div className="text-center py-12">
-            <GraduationCap className="h-16 w-16 text-slate-300 dark:text-slate-600 mx-auto mb-6" />
-            <h3 className="text-xl font-medium text-slate-900 dark:text-white mb-2">
-              No courses yet
-            </h3>
-            <p className="text-slate-500 dark:text-slate-400 mb-6">
-              Create your first degree plan to get started with UniAi.
-            </p>
-            <motion.button
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
-              onClick={() => router.push('/course-creation')}
-              className="px-6 py-3 bg-primary hover:bg-primary-dark text-white rounded-lg shadow-lg hover:shadow-xl transition-all"
-            >
-              Create Your First Degree Plan
-            </motion.button>
-          </div>
-        )}
-
-        {/* Search Results Empty State */}
-        {!isLoading && filteredCourses.length === 0 && searchTerm && courses.length > 0 && (
-          <div className="text-center py-12">
-            <BookOpen className="h-12 w-12 text-slate-300 dark:text-slate-600 mx-auto mb-4" />
-            <h3 className="text-lg font-medium text-slate-900 dark:text-white mb-2">
-              No courses found
-            </h3>
-            <p className="text-slate-500 dark:text-slate-400">
-              Try adjusting your search terms or create a new degree plan.
-            </p>
-          </div>
-        )}
-
-        {/* Quick Actions Section */}
-        {!isLoading && courses.length > 0 && (
-          <div className="mt-12 grid grid-cols-1 md:grid-cols-3 gap-6">
-            <motion.div
-              whileHover={{ scale: 1.02 }}
-              className="p-6 bg-white dark:bg-neutral-dark rounded-xl border border-slate-200 dark:border-slate-700 cursor-pointer hover:shadow-lg transition-shadow"
-              onClick={() => router.push('/lessons')}
-            >
-              <div className="flex items-center gap-4">
-                <div className="w-12 h-12 bg-blue-100 dark:bg-blue-900/30 rounded-lg flex items-center justify-center">
-                  <BookOpen className="h-6 w-6 text-blue-600 dark:text-blue-400" />
-                </div>
-                <div>
-                  <h4 className="font-semibold text-slate-900 dark:text-white">
-                    Browse Lessons
-                  </h4>
-                  <p className="text-sm text-slate-500 dark:text-slate-400">
-                    Access AI-generated content
-                  </p>
-                </div>
-              </div>
-            </motion.div>
-
-            <motion.div
-              whileHover={{ scale: 1.02 }}
-              className="p-6 bg-white dark:bg-neutral-dark rounded-xl border border-slate-200 dark:border-slate-700 cursor-pointer hover:shadow-lg transition-shadow"
-              onClick={() => router.push('/tests')}
-            >
-              <div className="flex items-center gap-4">
-                <div className="w-12 h-12 bg-green-100 dark:bg-green-900/30 rounded-lg flex items-center justify-center">
-                  <Target className="h-6 w-6 text-green-600 dark:text-green-400" />
-                </div>
-                <div>
-                  <h4 className="font-semibold text-slate-900 dark:text-white">
-                    Practice Tests
-                  </h4>
-                  <p className="text-sm text-slate-500 dark:text-slate-400">
-                    Test your knowledge
-                  </p>
-                </div>
-              </div>
-            </motion.div>
-
-            <motion.div
-              whileHover={{ scale: 1.02 }}
-              className="p-6 bg-white dark:bg-neutral-dark rounded-xl border border-slate-200 dark:border-slate-700 cursor-pointer hover:shadow-lg transition-shadow"
-              onClick={() => router.push('/study-groups')}
-            >
-              <div className="flex items-center gap-4">
-                <div className="w-12 h-12 bg-purple-100 dark:bg-purple-900/30 rounded-lg flex items-center justify-center">
-                  <Users className="h-6 w-6 text-purple-600 dark:text-purple-400" />
-                </div>
-                <div>
-                  <h4 className="font-semibold text-slate-900 dark:text-white">
-                    Study Groups
-                  </h4>
-                  <p className="text-sm text-slate-500 dark:text-slate-400">
-                    Connect with peers
-                  </p>
-                </div>
-              </div>
-            </motion.div>
-          </div>
-        )}
-
-        <div className="mb-8">
-          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-            <div>
-              <h1 className="text-3xl font-bold text-slate-900 dark:text-white">
-                Welcome back, Alex!
-              </h1>
-              <p className="text-slate-600 dark:text-slate-300 mt-1">
-                Continue your learning journey
-              </p>
-            </div>
+              <Filter className="h-4 w-4" />
+              <span>Filters</span>
+            </button>
+            
             <Link
               href="/course-creation"
-              className="px-6 py-3 bg-primary text-white rounded-lg hover:bg-primary-dark transition-colors font-semibold flex items-center gap-2"
+              className="flex items-center space-x-2 px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors"
             >
-              <Plus className="h-5 w-5" />
-              New Learning Plan
+              <Plus className="h-4 w-4" />
+              <span>Create New</span>
             </Link>
           </div>
         </div>
+
+        {/* Loading State */}
+        {isLoading && (
+          <div className="flex justify-center items-center py-12">
+            <Loader className="h-8 w-8 animate-spin text-primary" />
+            <span className="ml-3 text-slate-600 dark:text-slate-300">Loading your content...</span>
+          </div>
+        )}
+
+        {/* Content */}
+        {!isLoading && (
+          <>
+            {/* Degrees Section */}
+            {filteredDegrees.length > 0 && (
+              <section className="mb-12">
+                <div className="flex items-center justify-between mb-6">
+                  <h2 className="text-2xl font-bold text-slate-900 dark:text-white flex items-center">
+                    <GraduationCap className="h-6 w-6 mr-2 text-primary" />
+                    Degrees
+                  </h2>
+                  <span className="text-sm text-slate-500 dark:text-slate-400">
+                    {filteredDegrees.length} degree{filteredDegrees.length !== 1 ? 's' : ''}
+                  </span>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {filteredDegrees.map((degree) => (
+                    <DegreeCard key={degree.id} degree={degree} />
+                  ))}
+                </div>
+              </section>
+            )}
+
+            {/* Standalone Courses Section */}
+            {filteredCourses.length > 0 && (
+              <section className="mb-12">
+                <div className="flex items-center justify-between mb-6">
+                  <h2 className="text-2xl font-bold text-slate-900 dark:text-white flex items-center">
+                    <BookOpen className="h-6 w-6 mr-2 text-primary" />
+                    Individual Courses
+                  </h2>
+                  <span className="text-sm text-slate-500 dark:text-slate-400">
+                    {filteredCourses.length} course{filteredCourses.length !== 1 ? 's' : ''}
+                  </span>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {filteredCourses.map((course) => (
+                    <motion.div
+                      key={course.id}
+                      onClick={() => router.push(`/courses/${course.id}`)}
+                      className="bg-white dark:bg-neutral-dark rounded-xl shadow-lg border border-slate-200 dark:border-slate-700 p-6 cursor-pointer hover:shadow-xl transition-all duration-300 hover:scale-105"
+                      whileHover={{ y: -4 }}
+                      whileTap={{ scale: 0.98 }}
+                    >
+                      <div className="flex items-start justify-between mb-4">
+                        <div className="flex items-center space-x-3">
+                          <div className="flex-shrink-0 w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center">
+                            {course.icon ? (
+                              <span className="text-2xl">{course.icon}</span>
+                            ) : (
+                              <BookOpen className="h-6 w-6 text-primary" />
+                            )}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <h3 className="text-lg font-semibold text-slate-900 dark:text-white truncate">
+                              {course.name}
+                            </h3>
+                            <p className="text-sm text-slate-500 dark:text-slate-400 line-clamp-2">
+                              {course.description}
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                      
+                      <div className="grid grid-cols-2 gap-4 mb-4">
+                        <div className="flex items-center space-x-2">
+                          <Clock className="h-4 w-4 text-slate-400" />
+                          <span className="text-sm text-slate-600 dark:text-slate-300">
+                            {course.lesson_count || 0} lessons
+                          </span>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <TrendingUp className="h-4 w-4 text-slate-400" />
+                          <span className="text-sm text-slate-600 dark:text-slate-300">
+                            {course.progress_percentage || 0}% complete
+                          </span>
+                        </div>
+                      </div>
+
+                      <div className="w-full bg-slate-200 dark:bg-slate-700 rounded-full h-2 mb-3">
+                        <div
+                          className="bg-primary h-2 rounded-full transition-all duration-300"
+                          style={{ width: `${course.progress_percentage || 0}%` }}
+                        />
+                      </div>
+
+                      <div className="flex items-center justify-between text-xs text-slate-500 dark:text-slate-400">
+                        <span>Click to view lessons</span>
+                        <span>{new Date(course.created_at).toLocaleDateString()}</span>
+                      </div>
+                    </motion.div>
+                  ))}
+                </div>
+              </section>
+            )}
+
+            {/* Empty State */}
+            {filteredDegrees.length === 0 && filteredCourses.length === 0 && !isLoading && (
+              <div className="text-center py-12">
+                <div className="w-24 h-24 mx-auto mb-6 bg-slate-100 dark:bg-slate-800 rounded-full flex items-center justify-center">
+                  <BookOpen className="h-12 w-12 text-slate-400" />
+                </div>
+                <h3 className="text-xl font-semibold text-slate-900 dark:text-white mb-2">
+                  {searchTerm ? 'No results found' : 'Start your learning journey'}
+                </h3>
+                <p className="text-slate-600 dark:text-slate-400 mb-6 max-w-md mx-auto">
+                  {searchTerm 
+                    ? `No degrees or courses match "${searchTerm}". Try adjusting your search.`
+                    : 'Create your first degree or course to begin organizing your academic journey.'
+                  }
+                </p>
+                <Link
+                  href="/course-creation"
+                  className="inline-flex items-center space-x-2 px-6 py-3 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors"
+                >
+                  <Plus className="h-4 w-4" />
+                  <span>Create Your First Course</span>
+                </Link>
+              </div>
+            )}
+          </>
+        )}
       </div>
     </div>
   );

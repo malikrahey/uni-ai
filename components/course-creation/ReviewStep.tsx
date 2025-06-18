@@ -16,6 +16,7 @@ import {
 } from 'lucide-react';
 import { WizardStepProps, PlanType } from '@/types/course-creation';
 import { useCourses } from '@/hooks/useCourses';
+import { useDegrees } from '@/hooks/useDegrees';
 
 interface ReviewStepProps extends WizardStepProps {
   onClearDraft: () => void;
@@ -64,9 +65,11 @@ export default function ReviewStep({
 }: ReviewStepProps) {
   const router = useRouter();
   const { createCourse } = useCourses();
+  const { createDegree } = useDegrees();
   const [isCreating, setIsCreating] = useState(false);
   const [createError, setCreateError] = useState<string | null>(null);
-  const [createdCourse, setCreatedCourse] = useState<any | null>(null);
+  const [createdItem, setCreatedItem] = useState<any | null>(null);
+  const [createdItemType, setCreatedItemType] = useState<'course' | 'degree' | null>(null);
 
   const estimatedDuration = formData.planType && formData.startingLevel 
     ? getEstimatedDuration(formData.planType, formData.startingLevel)
@@ -79,43 +82,61 @@ export default function ReviewStep({
     setCreateError(null);
 
     try {
-      // Map wizard data to course creation format
-      const courseData = {
-        title: `${formData.subject} - ${formatPlanType(formData.planType)}`,
-        university: 'UniAi Academy', // Default university
-        degree_type: formData.subject,
-        duration_years: formData.planType === 'full-degree' ? 4 : 1,
-        description: `A ${formatPlanType(formData.planType)} in ${formData.subject}. Starting from ${formData.startingLevel} level, targeting ${formData.desiredLevel} expertise.`,
-        start_date: new Date().toISOString(),
-        target_graduation_date: (() => {
-          const startDate = new Date();
-          if (formData.planType === 'crash-course') {
-            startDate.setDate(startDate.getDate() + 28); // 4 weeks = 28 days
-          } else if (formData.planType === 'course') {
-            startDate.setMonth(startDate.getMonth() + 3); // 3 months
-          } else {
-            startDate.setFullYear(startDate.getFullYear() + 4); // 4 years
-          }
-          return startDate.toISOString();
-        })()
-      };
+      // Determine if we should create a degree or course based on plan type
+      const isFullDegree = formData.planType === 'full-degree';
 
-      console.log('Creating course with data:', courseData);
-      const newCourse = await createCourse(courseData);
+      if (isFullDegree) {
+        // Create a degree
+        const degreeData = {
+          name: `${formData.subject} - Full Degree`,
+          description: `A Full Degree in ${formData.subject}. Starting from ${formData.startingLevel} level, targeting ${formData.desiredLevel} expertise.`,
+          icon: '🎓' // Default degree icon
+        };
 
-      if (newCourse) {
-        setCreatedCourse(newCourse);
-        onClearDraft();
-        
-        // Redirect to the new course after a short delay
-        setTimeout(() => {
-          router.push(`/courses/${newCourse.id}`);
-        }, 2000);
+        console.log('Creating degree with data:', degreeData);
+        const newDegree = await createDegree(degreeData);
+
+        if (newDegree) {
+          setCreatedItem(newDegree);
+          setCreatedItemType('degree');
+          onClearDraft();
+          
+          // Redirect to the new degree after a short delay
+          setTimeout(() => {
+            router.push(`/degrees/${newDegree.id}`);
+          }, 2000);
+        } else {
+          setCreateError('Failed to create degree. Please try again.');
+        }
       } else {
-        setCreateError('Failed to create course. Please try again.');
+        // Create a standalone course (existing logic with new schema)
+        const courseData = {
+          title: `${formData.subject} - ${formatPlanType(formData.planType)}`,
+          university: 'UniAi Academy',
+          degree_type: formData.subject,
+          duration_years: formData.planType === 'crash-course' ? 1 : (formData.planType === 'course' ? 1 : 4),
+          description: `A ${formatPlanType(formData.planType)} in ${formData.subject}. Starting from ${formData.startingLevel} level, targeting ${formData.desiredLevel} expertise.`,
+          start_date: new Date().toISOString()
+        };
+
+        console.log('Creating course with data:', courseData);
+        const newCourse = await createCourse(courseData);
+
+        if (newCourse) {
+          setCreatedItem(newCourse);
+          setCreatedItemType('course');
+          onClearDraft();
+          
+          // Redirect to the new course after a short delay
+          setTimeout(() => {
+            router.push(`/courses/${newCourse.id}`);
+          }, 2000);
+        } else {
+          setCreateError('Failed to create course. Please try again.');
+        }
       }
     } catch (error) {
-      console.error('Course creation error:', error);
+      console.error('Creation error:', error);
       setCreateError('An unexpected error occurred. Please try again.');
     } finally {
       setIsCreating(false);
@@ -156,7 +177,8 @@ export default function ReviewStep({
   ];
 
   // Show success state
-  if (createdCourse) {
+  if (createdItem) {
+    const isDegreee = createdItemType === 'degree';
     return (
       <div className="p-8">
         <motion.div
@@ -169,11 +191,11 @@ export default function ReviewStep({
           </div>
           
           <h2 className="text-3xl font-bold text-slate-900 dark:text-white mb-4">
-            🎉 Course Created Successfully!
+            🎉 {isDegreee ? 'Degree' : 'Course'} Created Successfully!
           </h2>
           
           <p className="text-lg text-slate-600 dark:text-slate-300 mb-6">
-            Your personalized learning plan for <strong>{formData.subject}</strong> has been created.
+            Your personalized {isDegreee ? 'degree program' : 'learning plan'} for <strong>{formData.subject}</strong> has been created.
           </p>
           
           <div className="bg-slate-50 dark:bg-slate-800 rounded-lg p-6 mb-6">
@@ -181,15 +203,26 @@ export default function ReviewStep({
               What's Next?
             </h3>
             <ul className="text-sm text-slate-600 dark:text-slate-400 space-y-1">
-              <li>• AI-generated curriculum will be available shortly</li>
-              <li>• Personalized lessons based on your knowledge level</li>
-              <li>• Progress tracking and milestone checkpoints</li>
-              <li>• Adaptive learning recommendations</li>
+              {isDegreee ? (
+                <>
+                  <li>• AI-generated courses will be created for this degree</li>
+                  <li>• Comprehensive curriculum spanning multiple topics</li>
+                  <li>• Structured progression through course sequences</li>
+                  <li>• Complete degree completion tracking</li>
+                </>
+              ) : (
+                <>
+                  <li>• AI-generated curriculum will be available shortly</li>
+                  <li>• Personalized lessons based on your knowledge level</li>
+                  <li>• Progress tracking and milestone checkpoints</li>
+                  <li>• Adaptive learning recommendations</li>
+                </>
+              )}
             </ul>
           </div>
           
           <p className="text-sm text-slate-500 dark:text-slate-400">
-            Redirecting to your course in a moment...
+            Redirecting to your {isDegreee ? 'degree' : 'course'} in a moment...
           </p>
         </motion.div>
       </div>

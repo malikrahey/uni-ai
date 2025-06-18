@@ -1,98 +1,46 @@
-import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs';
-import { createClient } from '@supabase/supabase-js';
-import { cookies } from 'next/headers';
 import { NextRequest, NextResponse } from 'next/server';
+import { createClient } from '@supabase/supabase-js';
+import { createAuthenticatedClient } from '@/utils/supabase-auth';
+import { getCourseById } from '@/utils/database/education';
 
 // GET /api/courses/[id] - Get a specific course
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    // Await params before using its properties (Next.js 15 requirement)
+    const { id } = await params;
     
-    // Get the authorization header
-    const authHeader = request.headers.get('authorization');
-    console.log('Authorization header present:', !!authHeader);
+    const { supabase, user } = await createAuthenticatedClient(request);
+
+    // Get course details
+    const courseDetail = await getCourseById(id, user.id, supabase);
+
+    return NextResponse.json({
+      ...courseDetail,
+      success: true
+    });
+
+  } catch (error) {
+    console.error('Error in GET /api/courses/[id]:', error);
     
-    if (!authHeader) {
+    if (error instanceof Error && error.message.includes('Authorization header missing')) {
       return NextResponse.json(
         { error: 'Authorization header missing' },
         { status: 401 }
       );
     }
-
-    // Extract token from Bearer header
-    const token = authHeader.replace('Bearer ', '');
-    console.log('Token extracted, length:', token.length);
-
-    // Create Supabase client
-    const supabase = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-    );
-
-    // Get user from token
-    const { data: { user }, error: userError } = await supabase.auth.getUser(token);
-
-    const courseId = params.id;
-
-    // Get the specific course with subjects
-    const { data: course, error: courseError } = await supabase
-      .from('courses')
-      .select(`
-        *,
-        course_subjects (
-          id,
-          subject_name,
-          credits,
-          completed,
-          semester,
-          description,
-          prerequisites,
-          created_at
-        )
-      `)
-      .eq('id', courseId)
-      .eq('user_id', user?.id)
-      .eq('is_deleted', false)
-      .single();
-
-    if (courseError) {
-      if (courseError.code === 'PGRST116') {
-        return NextResponse.json(
-          { error: 'Course not found' },
-          { status: 404 }
-        );
-      }
-      console.error('Error fetching course:', courseError);
+    
+    if (error instanceof Error && error.message.includes('Invalid token')) {
       return NextResponse.json(
-        { error: 'Failed to fetch course' },
-        { status: 500 }
+        { error: 'Invalid token or user not found', details: error.message },
+        { status: 401 }
       );
     }
-
-    // Calculate progress
-    const subjects = course.course_subjects || [];
-    const totalSubjects = subjects.length;
-    const completedSubjects = subjects.filter((subject: any) => subject.completed).length;
-    const progress = totalSubjects > 0 ? Math.round((completedSubjects / totalSubjects) * 100) : 0;
-
-    const courseWithProgress = {
-      ...course,
-      progress,
-      totalCourses: totalSubjects,
-      completedCourses: completedSubjects
-    };
-
-    return NextResponse.json({
-      course: courseWithProgress,
-      success: true
-    });
-
-  } catch (error) {
-    console.error('Unexpected error in GET /api/courses/[id]:', error);
+    
     return NextResponse.json(
-      { error: 'Internal server error' },
+      { error: 'Internal server error', details: error instanceof Error ? error.message : 'Unknown error' },
       { status: 500 }
     );
   }
@@ -101,139 +49,143 @@ export async function GET(
 // PUT /api/courses/[id] - Update a specific course
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const supabase = createRouteHandlerClient({ cookies });
+    // Await params before using its properties (Next.js 15 requirement)  
+    const { id } = await params;
     
-    // Get the authenticated user
-    const { data: { user }, error: userError } = await supabase.auth.getUser();
-    
-    if (userError || !user) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      );
-    }
-
-    const courseId = params.id;
+    const { supabase, user } = await createAuthenticatedClient(request);
 
     // Parse request body
     const body = await request.json();
-    const { 
-      title, 
-      university, 
-      degree_type, 
-      duration_years, 
-      start_date, 
-      target_graduation_date,
-      description 
-    } = body;
+    const { name, description, icon } = body;
 
-    // Update the course
-    const { data: course, error: courseError } = await supabase
-      .from('courses')
-      .update({
-        title,
-        university,
-        degree_type,
-        duration_years,
-        start_date,
-        target_graduation_date,
-        description,
-        updated_at: new Date().toISOString()
-      })
-      .eq('id', courseId)
-      .eq('user_id', user.id)
-      .eq('is_deleted', false)
-      .select()
-      .single();
-
-    if (courseError) {
-      if (courseError.code === 'PGRST116') {
-        return NextResponse.json(
-          { error: 'Course not found' },
-          { status: 404 }
-        );
-      }
-      console.error('Error updating course:', courseError);
+    // Validate required fields
+    if (!name || !description) {
       return NextResponse.json(
-        { error: 'Failed to update course' },
-        { status: 500 }
+        { error: 'Missing required fields: name, description' },
+        { status: 400 }
       );
     }
 
+    // Verify user owns the course
+    const { data: existingCourse, error: verificationError } = await supabase
+      .from('courses')
+      .select('id')
+      .eq('id', id)
+      .eq('user_id', user.id)
+      .single();
+
+    if (verificationError || !existingCourse) {
+      return NextResponse.json(
+        { error: 'Course not found or access denied' },
+        { status: 404 }
+      );
+    }
+
+    // Update the course
+    const { data: updatedCourse, error: updateError } = await supabase
+      .from('courses')
+      .update({
+        name,
+        description,
+        icon,
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', id)
+      .select()
+      .single();
+
+    if (updateError) throw updateError;
+
     return NextResponse.json({
-      course,
-      success: true,
-      message: 'Course updated successfully'
+      course: updatedCourse,
+      success: true
     });
 
   } catch (error) {
-    console.error('Unexpected error in PUT /api/courses/[id]:', error);
+    console.error('Error in PUT /api/courses/[id]:', error);
+    
+    if (error instanceof Error && error.message.includes('Authorization header missing')) {
+      return NextResponse.json(
+        { error: 'Authorization header missing' },
+        { status: 401 }
+      );
+    }
+    
+    if (error instanceof Error && error.message.includes('Invalid token')) {
+      return NextResponse.json(
+        { error: 'Invalid token or user not found', details: error.message },
+        { status: 401 }
+      );
+    }
+    
     return NextResponse.json(
-      { error: 'Internal server error' },
+      { error: 'Internal server error', details: error instanceof Error ? error.message : 'Unknown error' },
       { status: 500 }
     );
   }
 }
 
-// DELETE /api/courses/[id] - Delete a specific course (soft delete)
+// DELETE /api/courses/[id] - Delete a specific course (hard delete)
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const supabase = createRouteHandlerClient({ cookies });
+    // Await params before using its properties (Next.js 15 requirement)
+    const { id } = await params;
     
-    // Get the authenticated user
-    const { data: { user }, error: userError } = await supabase.auth.getUser();
-    
-    if (userError || !user) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      );
-    }
+    const { supabase, user } = await createAuthenticatedClient(request);
 
-    const courseId = params.id;
-
-    // Soft delete the course
-    const { data: course, error: courseError } = await supabase
+    // Verify user owns the course
+    const { data: existingCourse, error: verificationError } = await supabase
       .from('courses')
-      .update({
-        is_deleted: true,
-        updated_at: new Date().toISOString()
-      })
-      .eq('id', courseId)
+      .select('id')
+      .eq('id', id)
       .eq('user_id', user.id)
-      .eq('is_deleted', false)
-      .select()
       .single();
 
-    if (courseError) {
-      if (courseError.code === 'PGRST116') {
-        return NextResponse.json(
-          { error: 'Course not found' },
-          { status: 404 }
-        );
-      }
-      console.error('Error deleting course:', courseError);
+    if (verificationError || !existingCourse) {
       return NextResponse.json(
-        { error: 'Failed to delete course' },
-        { status: 500 }
+        { error: 'Course not found or access denied' },
+        { status: 404 }
       );
     }
 
+    // Delete the course (lessons and tests will be deleted via cascade)
+    const { error: deleteError } = await supabase
+      .from('courses')
+      .delete()
+      .eq('id', id);
+
+    if (deleteError) throw deleteError;
+
     return NextResponse.json({
-      success: true,
-      message: 'Course deleted successfully'
+      message: 'Course deleted successfully',
+      success: true
     });
 
   } catch (error) {
-    console.error('Unexpected error in DELETE /api/courses/[id]:', error);
+    console.error('Error in DELETE /api/courses/[id]:', error);
+    
+    if (error instanceof Error && error.message.includes('Authorization header missing')) {
+      return NextResponse.json(
+        { error: 'Authorization header missing' },
+        { status: 401 }
+      );
+    }
+    
+    if (error instanceof Error && error.message.includes('Invalid token')) {
+      return NextResponse.json(
+        { error: 'Invalid token or user not found', details: error.message },
+        { status: 401 }
+      );
+    }
+    
     return NextResponse.json(
-      { error: 'Internal server error' },
+      { error: 'Internal server error', details: error instanceof Error ? error.message : 'Unknown error' },
       { status: 500 }
     );
   }
