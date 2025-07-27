@@ -2,11 +2,44 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { createAuthenticatedClient } from '@/utils/supabase-auth';
 import { createLesson } from '@/utils/database/education';
+import { validateSubscriptionAccess, getSubscriptionErrorMessage } from '@/utils/subscription-check';
 import type { CreateLessonForm } from '@/types/education';
 
 export async function POST(request: NextRequest) {
   try {
     const { supabase, user } = await createAuthenticatedClient(request);
+
+    // Validate subscription access before allowing lesson creation
+    try {
+      await validateSubscriptionAccess(user.id, supabase);
+    } catch (subscriptionError) {
+      // Check if it's an authentication error
+      if (subscriptionError instanceof Error && subscriptionError.message.includes('Authentication required')) {
+        return NextResponse.json(
+          { 
+            error: 'Authentication required',
+            message: 'Please log in to continue',
+            code: 'AUTHENTICATION_REQUIRED',
+            redirect: '/'
+          },
+          { status: 401 }
+        );
+      }
+
+      // Get detailed subscription status for better error messaging
+      const { checkSubscriptionAccess } = await import('@/utils/subscription-check');
+      const status = await checkSubscriptionAccess(user.id, supabase);
+      const errorMessage = getSubscriptionErrorMessage(status);
+      
+      return NextResponse.json(
+        { 
+          error: 'Subscription required',
+          message: errorMessage,
+          code: 'SUBSCRIPTION_REQUIRED'
+        },
+        { status: 403 }
+      );
+    }
 
     // Parse request body
     const body = await request.json();
@@ -67,14 +100,25 @@ export async function POST(request: NextRequest) {
     
     if (error instanceof Error && error.message.includes('Authorization header missing')) {
       return NextResponse.json(
-        { error: 'Authorization header missing' },
+        { 
+          error: 'Authorization header missing',
+          message: 'Please log in to continue',
+          code: 'AUTHENTICATION_REQUIRED',
+          redirect: '/'
+        },
         { status: 401 }
       );
     }
     
     if (error instanceof Error && error.message.includes('Invalid token')) {
       return NextResponse.json(
-        { error: 'Invalid token or user not found', details: error.message },
+        { 
+          error: 'Invalid token or user not found',
+          message: 'Please log in to continue',
+          details: error.message,
+          code: 'AUTHENTICATION_REQUIRED',
+          redirect: '/'
+        },
         { status: 401 }
       );
     }
