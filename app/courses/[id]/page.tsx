@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { useAuth } from '@/contexts/AuthContext';
@@ -30,7 +30,34 @@ export default function CourseDetailPage() {
 
   const courseId = params.id as string;
 
-  const fetchCourseDetail = async () => {
+  const handleGenerateLessons = useCallback(async () => {
+    try {
+      console.log('Auto-generating lessons for course:', courseId);
+      
+      await generateLessons(courseId, { lessonCount: 12 });
+      
+      // Refresh course data to show new lessons by calling fetchCourseDetail directly
+      // We'll trigger a re-fetch by updating the dependency
+      if (session?.access_token) {
+        const response = await fetch(`/api/courses/${courseId}`, {
+          headers: {
+            'Authorization': `Bearer ${session.access_token}`,
+            'Content-Type': 'application/json',
+          },
+        });
+
+        if (response.ok) {
+          const result = await response.json();
+          setCourseData(result);
+        }
+      }
+    } catch (err) {
+      console.error('Error generating lessons:', err);
+      setError(err instanceof Error ? err.message : 'Failed to generate lessons');
+    }
+  }, [courseId, generateLessons, session?.access_token]);
+
+  const fetchCourseDetail = useCallback(async () => {
     if (!session?.access_token) return;
     
     try {
@@ -62,26 +89,12 @@ export default function CourseDetailPage() {
     } finally {
       setIsLoading(false);
     }
-  };
-
-  const handleGenerateLessons = async () => {
-    try {
-      console.log('Auto-generating lessons for course:', courseId);
-      
-      await generateLessons(courseId, { lessonCount: 12 });
-      
-      // Refresh course data to show new lessons
-      await fetchCourseDetail();
-    } catch (err) {
-      console.error('Error generating lessons:', err);
-      setError(err instanceof Error ? err.message : 'Failed to generate lessons');
-    }
-  };
+  }, [session?.access_token, courseId, isGenerating, handleGenerateLessons]);
 
   useEffect(() => {
     if (!session?.access_token || !courseId) return;
     fetchCourseDetail();
-  }, [session?.access_token, courseId]);
+  }, [session?.access_token, courseId, fetchCourseDetail]);
 
   if (isLoading && !isGenerating) {
     return (

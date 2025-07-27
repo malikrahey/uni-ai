@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import ReactMarkdown from 'react-markdown';
@@ -44,7 +44,7 @@ export default function LessonDetailPage() {
 
   const lessonId = params.id as string;
 
-  const fetchLessonDetail = async () => {
+  const fetchLessonDetail = useCallback(async () => {
     try {
       setIsLoading(true);
       setError(null);
@@ -82,9 +82,9 @@ export default function LessonDetailPage() {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [session?.access_token, lessonId]);
 
-  const triggerAutoGeneration = async (lessonData: Lesson) => {
+  const triggerAutoGeneration = useCallback(async (lessonData: Lesson) => {
     if (autoGenerationTriggered || isGenerating) return;
 
     // Check if content is empty or minimal
@@ -97,48 +97,33 @@ export default function LessonDetailPage() {
                      !lessonData.test.questions || 
                      lessonData.test.questions.length === 0;
 
-    console.log('Auto-generation check:', {
-      isEmpty,
-      hasNoTest,
-      hasContent: !!lessonData.content,
-      contentLength: lessonData.content?.length || 0,
-      hasTest: !!lessonData.test,
-      testQuestions: lessonData.test?.questions?.length || 0,
-      willTrigger: isEmpty || hasNoTest
-    });
-
     if (isEmpty || hasNoTest) {
       setAutoGenerationTriggered(true);
+      
       try {
         if (isEmpty) {
-          // Generate full content including test
-          console.log('Triggering content generation...');
           setGenerationType('content');
           await generateContent(lessonId);
-        } else if (hasNoTest) {
-          // Generate only the test
-          console.log('Triggering test generation...');
+        }
+        
+        if (hasNoTest) {
           setGenerationType('test');
           await generateTest(lessonId);
         }
-        // Wait a moment for database operations to complete
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        // Refetch the lesson data after generation
+        
+        // Refetch lesson data after generation
         const updatedLesson = await fetchLessonDetail();
         if (updatedLesson) {
           setLesson(updatedLesson);
-          console.log('Updated lesson after generation:', {
-            hasTest: !!updatedLesson.test,
-            testQuestions: updatedLesson.test?.questions?.length || 0
-          });
         }
       } catch (error) {
         console.error('Auto-generation failed:', error);
+        setError('Failed to auto-generate lesson content');
       } finally {
         setGenerationType(null);
       }
     }
-  };
+  }, [autoGenerationTriggered, isGenerating, lessonId, generateContent, generateTest, fetchLessonDetail]);
 
   useEffect(() => {
     const loadLesson = async () => {
@@ -225,7 +210,7 @@ export default function LessonDetailPage() {
   };
 
   // Test handling functions
-  const initializeTestAnswers = () => {
+  const initializeTestAnswers = useCallback(() => {
     if (!lesson?.test?.questions) return;
     
     const answers = lesson.test.questions.map((_, index) => ({
@@ -233,7 +218,7 @@ export default function LessonDetailPage() {
       answer: ''
     }));
     setTestAnswers(answers);
-  };
+  }, [lesson?.test?.questions]);
 
   const handleTestAnswerChange = (questionIndex: number, answer: number | string) => {
     setTestAnswers(prev => prev.map(a => 
@@ -524,7 +509,7 @@ export default function LessonDetailPage() {
                       Content Not Available
                     </h3>
                     <p className="text-slate-600 dark:text-slate-400 max-w-md mb-4">
-                      This lesson doesn't have content yet. We can generate it for you using AI.
+                      This lesson doesn&apos;t have content yet. We can generate it for you using AI.
                     </p>
                     <button
                       onClick={() => triggerAutoGeneration(lesson)}

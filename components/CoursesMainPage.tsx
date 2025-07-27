@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import { useAuth } from '@/contexts/AuthContext';
 import { useRouter } from 'next/navigation';
@@ -35,7 +35,7 @@ export default function CoursesMainPage() {
   } | null>(null);
 
   // Debug function to test authentication
-  const testAuth = async () => {
+  const testAuth = useCallback(async () => {
     try {
       console.log('Frontend Debug - User:', user);
       console.log('Frontend Debug - Session:', session);
@@ -56,7 +56,7 @@ export default function CoursesMainPage() {
     } catch (error) {
       console.error('Auth test failed:', error);
     }
-  };
+  }, [user, session]);
 
   // // Check database setup
   // const checkDatabaseSetup = async () => {

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { useAuth } from '@/contexts/AuthContext';
@@ -28,7 +28,55 @@ export default function DegreeDetailPage() {
 
   const degreeId = params.id as string;
 
-  const fetchDegreeDetail = async () => {
+  const generateCourses = useCallback(async () => {
+    if (!session?.access_token) return;
+
+    try {
+      setIsGeneratingCourses(true);
+      console.log('Auto-generating courses for degree:', degreeId);
+
+      const response = await fetch(`/api/degrees/${degreeId}/generate-courses`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${session.access_token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          courseCount: 8
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to generate courses');
+      }
+
+      const result = await response.json();
+      console.log(`Successfully generated ${result.generated} courses`);
+
+      // Refresh degree data to show new courses by calling the API directly
+      if (session?.access_token) {
+        const refreshResponse = await fetch(`/api/degrees/${degreeId}`, {
+          headers: {
+            'Authorization': `Bearer ${session.access_token}`,
+            'Content-Type': 'application/json',
+          },
+        });
+
+        if (refreshResponse.ok) {
+          const refreshResult = await refreshResponse.json();
+          setDegreeData(refreshResult);
+        }
+      }
+    } catch (err) {
+      console.error('Error generating courses:', err);
+      setError(err instanceof Error ? err.message : 'Failed to generate courses');
+    } finally {
+      setIsGeneratingCourses(false);
+    }
+  }, [session?.access_token, degreeId]);
+
+  const fetchDegreeDetail = useCallback(async () => {
     if (!session?.access_token) return;
     
     try {
@@ -60,43 +108,7 @@ export default function DegreeDetailPage() {
     } finally {
       setIsLoading(false);
     }
-  };
-
-  const generateCourses = async () => {
-    if (!session?.access_token) return;
-
-    try {
-      setIsGeneratingCourses(true);
-      console.log('Auto-generating courses for degree:', degreeId);
-
-      const response = await fetch(`/api/degrees/${degreeId}/generate-courses`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${session.access_token}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          courseCount: 8
-        }),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to generate courses');
-      }
-
-      const result = await response.json();
-      console.log(`Successfully generated ${result.generated} courses`);
-
-      // Refresh degree data to show new courses
-      await fetchDegreeDetail();
-    } catch (err) {
-      console.error('Error generating courses:', err);
-      setError(err instanceof Error ? err.message : 'Failed to generate courses');
-    } finally {
-      setIsGeneratingCourses(false);
-    }
-  };
+  }, [session?.access_token, degreeId, isGeneratingCourses, generateCourses]);
 
   useEffect(() => {
     if (!session?.access_token || !degreeId) return;

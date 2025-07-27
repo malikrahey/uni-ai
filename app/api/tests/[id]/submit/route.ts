@@ -9,7 +9,7 @@ export async function POST(
 ) {
   try {
     // Await params before using its properties (Next.js 15 requirement)
-    const { id } = await params;
+    await params;
     
     const { supabase, user } = await createAuthenticatedClient(request);
 
