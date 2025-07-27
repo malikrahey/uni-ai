@@ -1,14 +1,11 @@
 "use client";
 
 import { useAuth } from '@/contexts/AuthContext';
-import { useRouter } from 'next/navigation';
-import { useEffect } from 'react';
 import CoursesMainPage from '@/components/CoursesMainPage';
 import LandingPage from '@/components/LandingPage';
 
 export default function HomePage() {
   const { user, isLoading } = useAuth();
-  const router = useRouter();
 
   // Show loading state while checking authentication
   if (isLoading) {

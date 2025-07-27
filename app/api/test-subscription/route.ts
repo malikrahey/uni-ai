@@ -1,23 +1,28 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createAuthenticatedClient } from '@/utils/supabase-auth';
-import { createDegree, getUserDegrees } from '@/utils/database/education';
-import { validateSubscriptionAccess, getSubscriptionErrorMessage } from '@/utils/subscription-check';
-import type { CreateDegreeForm } from '@/types/education';
+import { checkSubscriptionAccess, validateSubscriptionAccess } from '@/utils/subscription-check';
 
 export async function GET(request: NextRequest) {
   try {
     const { supabase, user } = await createAuthenticatedClient(request);
 
-    // Get user's degrees - pass authenticated client
-    const degrees = await getUserDegrees(user.id, supabase);
+    // Test subscription access check
+    const status = await checkSubscriptionAccess(user.id, supabase);
 
     return NextResponse.json({
-      degrees,
-      success: true
+      success: true,
+      user: {
+        id: user.id,
+        email: user.email
+      },
+      subscriptionStatus: status,
+      canGenerateContent: status.canGenerateContent,
+      hasActiveSubscription: status.hasActiveSubscription,
+      hasValidTrial: status.hasValidTrial
     });
 
   } catch (error) {
-    console.error('Error in GET /api/degrees:', error);
+    console.error('Error in GET /api/test-subscription:', error);
     
     if (error instanceof Error && error.message.includes('Authorization header missing')) {
       return NextResponse.json(
@@ -55,14 +60,26 @@ export async function POST(request: NextRequest) {
   try {
     const { supabase, user } = await createAuthenticatedClient(request);
 
-    // Validate subscription access before allowing degree creation
+    // Test subscription validation (this will throw an error if user doesn't have access)
     try {
-      await validateSubscriptionAccess(user.id, supabase);
-    } catch (subscriptionError) {
+      const status = await validateSubscriptionAccess(user.id, supabase);
+      
+      return NextResponse.json({
+        success: true,
+        message: 'Subscription validation passed',
+        user: {
+          id: user.id,
+          email: user.email
+        },
+        subscriptionStatus: status
+      });
+
+    } catch (validationError) {
       // Check if it's an authentication error
-      if (subscriptionError instanceof Error && subscriptionError.message.includes('Authentication required')) {
+      if (validationError instanceof Error && validationError.message.includes('Authentication required')) {
         return NextResponse.json(
           { 
+            success: false,
             error: 'Authentication required',
             message: 'Please log in to continue',
             code: 'AUTHENTICATION_REQUIRED',
@@ -72,50 +89,19 @@ export async function POST(request: NextRequest) {
         );
       }
 
-      // Get detailed subscription status for better error messaging
-      const { checkSubscriptionAccess } = await import('@/utils/subscription-check');
-      const status = await checkSubscriptionAccess(user.id, supabase);
-      const errorMessage = getSubscriptionErrorMessage(status);
-      
       return NextResponse.json(
         { 
-          error: 'Subscription required',
-          message: errorMessage,
+          success: false,
+          error: 'Subscription validation failed',
+          message: validationError instanceof Error ? validationError.message : 'Unknown validation error',
           code: 'SUBSCRIPTION_REQUIRED'
         },
         { status: 403 }
       );
     }
 
-    // Parse request body
-    const body = await request.json();
-    const { name, description, icon }: CreateDegreeForm = body;
-
-    // Validate required fields
-    if (!name || !description) {
-      return NextResponse.json(
-        { error: 'Missing required fields: name, description' },
-        { status: 400 }
-      );
-    }
-
-    // Create the degree with user_id added - pass authenticated client
-    const degreeData = {
-      name,
-      description,
-      icon,
-      user_id: user.id
-    };
-
-    const degree = await createDegree(degreeData, supabase);
-
-    return NextResponse.json({
-      degree,
-      success: true
-    }, { status: 201 });
-
   } catch (error) {
-    console.error('Error in POST /api/degrees:', error);
+    console.error('Error in POST /api/test-subscription:', error);
     
     if (error instanceof Error && error.message.includes('Authorization header missing')) {
       return NextResponse.json(

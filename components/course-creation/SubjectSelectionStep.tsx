@@ -10,10 +10,9 @@ import {
   X,
   Check,
   ArrowRight,
-  Filter,
   Star
 } from 'lucide-react';
-import { WizardStepProps, PlanType } from '@/types/course-creation';
+import { WizardStepProps } from '@/types/course-creation';
 import { COURSE_CATEGORIES, TRENDING_TOPICS, SUGGESTED_TOPICS_BY_PLAN } from '@/data/course-categories';
 
 export default function SubjectSelectionStep({
@@ -21,7 +20,6 @@ export default function SubjectSelectionStep({
   onUpdate,
   onNext,
   onBack,
-  canGoNext,
   canGoBack
 }: WizardStepProps) {
   const [searchTerm, setSearchTerm] = useState(formData.subject || '');
@@ -102,7 +100,7 @@ export default function SubjectSelectionStep({
           What do you want to learn?
         </h2>
         <p className="text-lg text-slate-600 dark:text-slate-300 max-w-2xl mx-auto">
-          Choose a subject or topic that interests you. We'll help you find the perfect learning path.
+          Choose a subject or topic that interests you. We&apos;ll help you find the perfect learning path.
         </p>
       </div>
 
@@ -299,7 +297,7 @@ export default function SubjectSelectionStep({
               onClick={() => setShowCustomInput(true)}
               className="text-primary hover:text-primary-dark underline text-sm font-medium"
             >
-              Don't see what you're looking for? Enter a custom topic
+              Don&apos;t see what you&apos;re looking for? Enter a custom topic
             </button>
           ) : (
             <motion.div

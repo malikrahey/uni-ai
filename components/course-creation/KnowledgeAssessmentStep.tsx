@@ -8,10 +8,7 @@ import {
   ChevronRight, 
   CheckCircle, 
   ArrowRight,
-  Lightbulb,
-  Trophy,
-  Zap,
-  GraduationCap
+  Lightbulb
 } from 'lucide-react';
 import { WizardStepProps, StartingLevel, DesiredLevel } from '@/types/course-creation';
 
@@ -98,7 +95,6 @@ export default function KnowledgeAssessmentStep({
   onUpdate,
   onNext,
   onBack,
-  canGoNext,
   canGoBack
 }: WizardStepProps) {
   const [selectedStarting, setSelectedStarting] = useState<StartingLevel | null>(
@@ -164,7 +160,7 @@ export default function KnowledgeAssessmentStep({
           </div>
           <div>
             <h3 className="text-2xl font-semibold text-slate-900 dark:text-white">
-              What's your starting level?
+              What&apos;s your starting level?
             </h3>
             <p className="text-slate-600 dark:text-slate-400">
               Be honest - this helps us create the perfect learning path for you
@@ -249,7 +245,7 @@ export default function KnowledgeAssessmentStep({
           </div>
           <div>
             <h3 className="text-2xl font-semibold text-slate-900 dark:text-white">
-              What's your desired level?
+              What&apos;s your desired level?
             </h3>
             <p className="text-slate-600 dark:text-slate-400">
               Choose the expertise level you want to achieve

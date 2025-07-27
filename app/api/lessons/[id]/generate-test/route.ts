@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
 import { createAuthenticatedClient } from '@/utils/supabase-auth';
+import { createTest } from '@/utils/database/education';
 import { generateCourseLesson } from '@/utils/courses';
 
 export async function POST(

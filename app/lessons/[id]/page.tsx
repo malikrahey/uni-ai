@@ -9,11 +9,9 @@ import { useAutoGeneration } from '@/hooks/useAutoGeneration';
 import { 
   ArrowLeft, 
   BookOpen, 
-  Clock,
   CheckCircle,
   AlertCircle,
   Loader,
-  Play,
   Award,
   FileText,
   Target,
@@ -24,7 +22,7 @@ import {
   RotateCcw,
   Send
 } from 'lucide-react';
-import type { Lesson, TestAnswer, TestResult, Question } from '@/types/education';
+import type { Lesson, TestAnswer, TestResult } from '@/types/education';
 
 export default function LessonDetailPage() {
   const params = useParams();
@@ -34,7 +32,6 @@ export default function LessonDetailPage() {
   const [lesson, setLesson] = useState<Lesson | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [showTest, setShowTest] = useState(false);
   const [autoGenerationTriggered, setAutoGenerationTriggered] = useState(false);
   const [generationType, setGenerationType] = useState<'content' | 'test' | null>(null);
   
@@ -144,18 +141,17 @@ export default function LessonDetailPage() {
   };
 
   useEffect(() => {
-    if (!session?.access_token || !lessonId) return;
-
     const loadLesson = async () => {
+      if (!session?.access_token || !lessonId) return;
+      
       const lessonData = await fetchLessonDetail();
-      if (lessonData) {
-        // Trigger auto-generation if content is empty
+      if (lessonData && !autoGenerationTriggered) {
         await triggerAutoGeneration(lessonData);
       }
     };
 
     loadLesson();
-  }, [session?.access_token, lessonId]);
+  }, [session?.access_token, lessonId, fetchLessonDetail, triggerAutoGeneration, autoGenerationTriggered]);
 
   const markLessonComplete = async () => {
     if (!lesson || !session?.access_token) return;
@@ -298,7 +294,7 @@ export default function LessonDetailPage() {
     if (lesson?.test && isTestExpanded && testAnswers.length === 0) {
       initializeTestAnswers();
     }
-  }, [lesson?.test, isTestExpanded]);
+  }, [lesson?.test, isTestExpanded, initializeTestAnswers, testAnswers.length]);
 
   // Auto-expand test if user has taken it before
   useEffect(() => {
@@ -730,8 +726,8 @@ export default function LessonDetailPage() {
                                 <h4 className="text-lg font-medium text-slate-600 dark:text-slate-400 mb-2">
                                   No Questions Available
                                 </h4>
-                                <p className="text-sm text-slate-500 dark:text-slate-500">
-                                  This test doesn't have any questions yet. Try regenerating the lesson content to create test questions.
+                                <p className="text-slate-500 dark:text-slate-400 text-sm">
+                                  This test doesn&apos;t have any questions yet. Try regenerating the lesson content to create test questions.
                                 </p>
                               </div>
                             ) : (

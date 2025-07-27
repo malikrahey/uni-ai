@@ -101,7 +101,7 @@ export default function DegreeDetailPage() {
   useEffect(() => {
     if (!session?.access_token || !degreeId) return;
     fetchDegreeDetail();
-  }, [session?.access_token, degreeId]);
+  }, [session?.access_token, degreeId, fetchDegreeDetail]);
 
   if (isLoading && !isGeneratingCourses) {
     return (

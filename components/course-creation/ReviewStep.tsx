@@ -4,7 +4,6 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { 
-  Check, 
   Edit, 
   Sparkles, 
   Clock, 
@@ -56,10 +55,7 @@ const getEstimatedDuration = (planType: PlanType, startingLevel: string) => {
 
 export default function ReviewStep({
   formData,
-  onUpdate,
-  onNext,
   onBack,
-  canGoNext,
   canGoBack,
   onClearDraft
 }: ReviewStepProps) {
@@ -68,7 +64,7 @@ export default function ReviewStep({
   const { createDegree } = useDegrees();
   const [isCreating, setIsCreating] = useState(false);
   const [createError, setCreateError] = useState<string | null>(null);
-  const [createdItem, setCreatedItem] = useState<any | null>(null);
+  const [createdItem, setCreatedItem] = useState<{ id: string; name?: string; title?: string; description?: string; icon?: string } | null>(null);
   const [createdItemType, setCreatedItemType] = useState<'course' | 'degree' | null>(null);
 
   const estimatedDuration = formData.planType && formData.startingLevel 
@@ -200,7 +196,7 @@ export default function ReviewStep({
           
           <div className="bg-slate-50 dark:bg-slate-800 rounded-lg p-6 mb-6">
             <h3 className="font-semibold text-slate-900 dark:text-white mb-2">
-              What's Next?
+              What&apos;s Next?
             </h3>
             <ul className="text-sm text-slate-600 dark:text-slate-400 space-y-1">
               {isDegreee ? (

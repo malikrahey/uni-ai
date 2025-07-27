@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
 import { createAuthenticatedClient } from '@/utils/supabase-auth';
 import { getHomeContent } from '@/utils/database/education';
 

@@ -6,8 +6,6 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '@/contexts/AuthContext';
 import { 
   ArrowLeft, 
-  Clock,
-  CheckCircle,
   AlertCircle,
   Loader,
   Target,
@@ -16,7 +14,7 @@ import {
   ChevronLeft,
   ChevronRight
 } from 'lucide-react';
-import type { Test, TestAnswer, TestResult } from '@/types/education';
+import type { Test, TestAnswer, TestResult, Question } from '@/types/education';
 
 export default function TestTakingPage() {
   const params = useParams();
@@ -29,7 +27,6 @@ export default function TestTakingPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [testResult, setTestResult] = useState<TestResult | null>(null);
-  const [timeStarted, setTimeStarted] = useState<Date | null>(null);
 
   const testId = params.id as string;
 
@@ -62,10 +59,9 @@ export default function TestTakingPage() {
         }
 
         setTest(lessonTest);
-        setTimeStarted(new Date());
         
         // Initialize answers array
-        setAnswers(lessonTest.questions.map((_: any, index: number) => ({
+        setAnswers(lessonTest.questions.map((_: Question, index: number) => ({
           questionIndex: index,
           answer: ''
         })));

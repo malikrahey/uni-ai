@@ -10,17 +10,13 @@ import {
   Plus, 
   BookOpen, 
   Clock, 
-  Users, 
   GraduationCap,
-  Calendar,
   TrendingUp,
-  Target,
   Search,
   Filter,
   AlertCircle,
   Loader,
-  RefreshCw,
-  Database
+  RefreshCw
 } from 'lucide-react';
 import Link from 'next/link';
 
@@ -30,8 +26,13 @@ export default function CoursesMainPage() {
   const { degrees, standaloneCourses, userProgress, isLoading, error, refetch } = useHomeContent();
   const [searchTerm, setSearchTerm] = useState("");
   const [showFilters, setShowFilters] = useState(false);
-  const [debugInfo, setDebugInfo] = useState<any>(null);
-  const [dbSetupInfo, setDbSetupInfo] = useState<any>(null);
+  const [debugInfo, setDebugInfo] = useState<{
+    hasUser?: boolean;
+    hasSession?: boolean;
+    tokenLength?: number;
+    userError?: string;
+    sessionError?: string;
+  } | null>(null);
 
   // Debug function to test authentication
   const testAuth = async () => {
@@ -75,7 +76,7 @@ export default function CoursesMainPage() {
       testAuth();
       // checkDatabaseSetup();
     }
-  }, [user, session]);
+  }, [user, session, testAuth]);
 
   // Filter content based on search term
   const filteredDegrees = degrees.filter(degree =>
@@ -115,7 +116,7 @@ export default function CoursesMainPage() {
           )}
 
           {/* Database Setup Info */}
-          {dbSetupInfo && (
+          {/* {dbSetupInfo && (
             <div className="mt-4 p-3 bg-blue-100 dark:bg-blue-900/30 rounded text-xs text-left">
               <div className="font-semibold mb-2">Database Status:</div>
               <div>Tables Exist: {dbSetupInfo.tablesExist ? 'Yes' : 'No'}</div>
@@ -130,7 +131,7 @@ export default function CoursesMainPage() {
                 </div>
               )}
             </div>
-          )}
+          )} */}
           
           <div className="flex gap-2 justify-center mt-4 flex-wrap">
             <button

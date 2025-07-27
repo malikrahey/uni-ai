@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
 import { createAuthenticatedClient } from '@/utils/supabase-auth';
 import { submitTest } from '@/utils/database/education';
 import type { TestSubmission } from '@/types/education';
@@ -10,7 +9,7 @@ export async function POST(
 ) {
   try {
     // Await params before using its properties (Next.js 15 requirement)
-    const { id: testId } = await params;
+    const { id } = await params;
     
     const { supabase, user } = await createAuthenticatedClient(request);
 
@@ -19,9 +18,9 @@ export async function POST(
     const { lesson_id, answers }: TestSubmission = body;
 
     // Validate required fields
-    if (!lesson_id || !answers || !Array.isArray(answers)) {
+    if (!lesson_id || !answers || !Array.isArray(answers) || answers.length === 0) {
       return NextResponse.json(
-        { error: 'Missing required fields: lesson_id, answers' },
+        { error: 'Missing required fields: lesson_id, answers (must be non-empty array)' },
         { status: 400 }
       );
     }

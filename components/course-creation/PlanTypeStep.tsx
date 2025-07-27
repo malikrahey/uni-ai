@@ -83,8 +83,7 @@ const getIcon = (iconName: string) => {
 export default function PlanTypeStep({
   formData,
   onUpdate,
-  onNext,
-  canGoNext
+  onNext
 }: WizardStepProps) {
   const handlePlanSelect = (planType: PlanType) => {
     onUpdate({ planType });
@@ -181,7 +180,7 @@ export default function PlanTypeStep({
                 {/* Recommended For */}
                 <div className="mb-4 p-3 bg-slate-50 dark:bg-slate-800 rounded-lg">
                   <p className="text-sm text-slate-600 dark:text-slate-300 italic">
-                    "{option.recommended}"
+                    &quot;{option.recommended}&quot;
                   </p>
                 </div>
 

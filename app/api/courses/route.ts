@@ -1,8 +1,6 @@
-import { createClient } from '@supabase/supabase-js';
 import { NextRequest, NextResponse } from 'next/server';
 import { createAuthenticatedClient } from '@/utils/supabase-auth';
 import { createCourse } from '@/utils/database/education';
-import type { CreateCourseForm } from '@/types/education';
 
 // GET /api/courses - Get all courses for the authenticated user
 export async function GET(request: NextRequest) {

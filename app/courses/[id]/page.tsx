@@ -11,7 +11,6 @@ import {
   CheckCircle, 
   TrendingUp, 
   Clock,
-  Plus,
   FileText,
   Play,
   Loader,
