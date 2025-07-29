@@ -237,7 +237,7 @@ async function createSubscription(subscriptionId: string, userId: string, custom
     logWebhookEvent('Retrieved Stripe subscription', stripeSubscription);
 
     // First, ensure the user exists in the users table
-    const { data: existingUser, error: userCheckError } = await supabaseAdmin
+    const { data: _, error: userCheckError } = await supabaseAdmin
       .from('users')
       .select('id')
       .eq('id', userId)
