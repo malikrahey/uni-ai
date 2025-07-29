@@ -236,6 +236,79 @@ async function createSubscription(subscriptionId: string, userId: string, custom
     const stripeSubscription = await stripe.subscriptions.retrieve(subscriptionId);
     logWebhookEvent('Retrieved Stripe subscription', stripeSubscription);
 
+    // First, ensure the user exists in the users table
+    const { data: existingUser, error: userCheckError } = await supabaseAdmin
+      .from('users')
+      .select('id')
+      .eq('id', userId)
+      .single();
+
+    if (userCheckError && userCheckError.code === 'PGRST116') {
+      // User doesn't exist in users table, try to create them
+      logWebhookEvent('User not found in users table, attempting to create', { userId });
+      
+      // Get user details from auth.users
+      const { data: authUser, error: authError } = await supabaseAdmin
+        .from('auth.users')
+        .select('id, email, created_at')
+        .eq('id', userId)
+        .single();
+
+      if (authError) {
+        logWebhookEvent('Error fetching auth user', authError);
+        throw new Error('User not found in auth system');
+      }
+
+      // Create user record
+      const { error: createUserError } = await supabaseAdmin
+        .from('users')
+        .insert({
+          id: authUser.id,
+          email: authUser.email,
+          created_at: authUser.created_at || new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+          is_deleted: false
+        });
+
+      if (createUserError) {
+        logWebhookEvent('Error creating user record', createUserError);
+        throw createUserError;
+      }
+
+      // Create user_preferences record
+      const { error: createPrefError } = await supabaseAdmin
+        .from('user_preferences')
+        .insert({
+          user_id: authUser.id,
+          has_completed_onboarding: false
+        });
+
+      if (createPrefError) {
+        logWebhookEvent('Error creating user preferences', createPrefError);
+        // Don't throw here, as the main user record was created
+      }
+
+      // Create user_trials record
+      const { error: createTrialError } = await supabaseAdmin
+        .from('user_trials')
+        .insert({
+          user_id: authUser.id,
+          trial_start_time: new Date().toISOString(),
+          trial_end_time: new Date(Date.now() + 48 * 60 * 60 * 1000).toISOString(), // 48 hours
+          is_trial_used: false
+        });
+
+      if (createTrialError) {
+        logWebhookEvent('Error creating user trial', createTrialError);
+        // Don't throw here, as the main user record was created
+      }
+
+      logWebhookEvent('Successfully created user records', { userId });
+    } else if (userCheckError) {
+      logWebhookEvent('Error checking user existence', userCheckError);
+      throw userCheckError;
+    }
+
     const { data: existingData, error: checkError } = await supabaseAdmin
       .from('subscriptions')
       .select('*')
