@@ -92,7 +92,7 @@ export const POST = withCors(async function POST(request: NextRequest) {
     switch (event.type) {
       case 'checkout.session.completed': {
         const session = event.data.object as Stripe.Checkout.Session;
-        
+        console.log('session', session);
         // Check for existing active subscription
         const hasActiveSubscription = await checkExistingSubscription(session.customer as string);
         
@@ -112,6 +112,7 @@ export const POST = withCors(async function POST(request: NextRequest) {
             message: 'Customer already has an active subscription'
           });
         }
+        console.log('no active subscription');
 
         logWebhookEvent('Processing checkout.session.completed', {
           sessionId: session.id,
@@ -126,10 +127,13 @@ export const POST = withCors(async function POST(request: NextRequest) {
             customerId: session.customer,
             subscriptionId: session.subscription
           });
+          console.log('session data is invalid');
           return NextResponse.json({ error: 'Invalid session data' }, { status: 400 });
         }
+        console.log('session data is valid');
 
         try {
+          console.log('creating subscription');
           const subscription = await createSubscription(
             session.subscription as string,
             session.client_reference_id!,
