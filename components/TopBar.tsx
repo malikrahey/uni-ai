@@ -89,9 +89,9 @@ export default function TopBar() {
 
               {!isLoadingSubscription && (
                 subscription || isInTrial
-              ) && pathname !== '/dashboard' && (
+              ) && pathname !== '/' && (
                 <button
-                  onClick={() => router.push('/dashboard')}
+                  onClick={() => router.push('/')}
                   className="hidden sm:block px-4 py-2 bg-primary hover:bg-primary-dark text-white rounded-full text-sm font-medium transition-colors shadow-subtle hover:shadow-hover"
                 >
                   {isInTrial ? "Start Learning" : "My Courses"}
