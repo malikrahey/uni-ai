@@ -6,7 +6,6 @@ import { useRouter, usePathname } from 'next/navigation';
 import Link from 'next/link';
 import { useSubscription } from '@/hooks/useSubscription';
 import { useTrialStatus } from '@/hooks/useTrialStatus';
-import { BuyMeCoffee } from './BuyMeCoffee';
 import { FaGraduationCap } from 'react-icons/fa6';
 // import { supabase } from '@/utils/supabase';
 
@@ -61,7 +60,6 @@ export default function TopBar() {
         <div className="flex items-center gap-4">
           {!user ? (
             <>
-              <BuyMeCoffee />
               {/* Show login button for unauthenticated users */}
               <Link
                 href="/login"
@@ -85,7 +83,6 @@ export default function TopBar() {
                   Upgrade Plan
                 </button>
               )}
-              <BuyMeCoffee />
 
               {!isLoadingSubscription && (
                 subscription || isInTrial

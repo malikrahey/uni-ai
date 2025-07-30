@@ -15,7 +15,7 @@ function VerifyEmailContent() {
   // Redirect if user is already verified
   useEffect(() => {
     if (user?.email_confirmed_at) {
-      router.replace('/dashboard');
+      router.replace('/');
     }
   }, [user, router]);
 

@@ -370,7 +370,7 @@ export default function LessonDetailPage() {
                 )}
               </div>
               <div>
-                <h1 className="text-3xl font-bold text-slate-900 dark:text-white">
+                <h1 className="text-3xl font-bold text-slate-900 dark:text-white break-words">
                   {lesson.name}
                 </h1>
                 <p className="text-lg text-slate-600 dark:text-slate-300 mt-1">

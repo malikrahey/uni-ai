@@ -185,7 +185,7 @@ export default function CourseDetailPage() {
                 )}
               </div>
               <div>
-                <h1 className="text-3xl font-bold text-slate-900 dark:text-white">
+                <h1 className="text-3xl font-bold text-slate-900 dark:text-white break-words">
                   {course.name}
                 </h1>
                 <p className="text-lg text-slate-600 dark:text-slate-300 mt-1">
@@ -327,11 +327,11 @@ export default function CourseDetailPage() {
                       {/* Lesson Info */}
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center space-x-2 mb-1">
-                          <h3 className="text-lg font-semibold text-slate-900 dark:text-white">
+                          <h3 className="text-lg font-semibold text-slate-900 dark:text-white break-words line-clamp-2">
                             {lesson.name}
                           </h3>
                           {isCompleted && (
-                            <CheckCircle className="h-5 w-5 text-green-500" />
+                            <CheckCircle className="h-5 w-5 text-green-500 flex-shrink-0" />
                           )}
                         </div>
                         <p className="text-sm text-slate-500 dark:text-slate-400 line-clamp-2">

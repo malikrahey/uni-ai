@@ -321,7 +321,7 @@ export default function DegreeDetailPage() {
                       )}
                     </div>
                     <div className="flex-1 min-w-0">
-                      <h3 className="text-lg font-semibold text-slate-900 dark:text-white truncate">
+                      <h3 className="text-lg font-semibold text-slate-900 dark:text-white break-words line-clamp-2">
                         {course.name}
                       </h3>
                       <p className="text-sm text-slate-500 dark:text-slate-400 line-clamp-2">
