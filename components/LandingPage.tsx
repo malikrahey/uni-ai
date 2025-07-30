@@ -1,210 +1,130 @@
 "use client";
 
-import { PricingSection } from '@/components/PricingSection';
-import { useTrialStatus } from '@/hooks/useTrialStatus';
 import { TypewriterEffect } from '@/components/TypewriterEffect';
-import { FaGraduationCap, FaBookOpen, FaClipboardList, FaChartLine, FaBrain, FaRocket, FaUsers, FaAward, FaClock } from 'react-icons/fa6';
+import { FaGraduationCap, FaBookOpen, FaClipboardList, FaBrain, FaRocket, FaUsers, FaCheck } from 'react-icons/fa6';
 import { 
-  GraduationCap, BookOpen, ClipboardCheck, Brain, Target, Users
+  GraduationCap, BookOpen, ClipboardCheck, Target, Sparkles, Zap
 } from 'lucide-react';
-import { motion, useScroll, useTransform } from 'framer-motion';
-import { useInView } from 'react-intersection-observer';
+import { motion } from 'framer-motion';
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Link as ScrollLink } from 'react-scroll';
 import { VideoModal } from '@/components/VideoModal';
 
-/* eslint-disable @typescript-eslint/no-unused-vars */
-
-// Updated workflow steps for course planning
+// Updated workflow steps for AI course generation
 const workflowSteps = [
   {
-    title: "Select Your Degree",
-    description: "Choose your university program and specialization",
+    title: "Choose Your Learning Path",
+    description: "Select from various subjects and topics you want to learn",
     preview: <TypewriterEffect text="Computer Science • Business • Engineering • Medicine..." />
   },
   {
-    title: "Generate Course Plan",
-    description: "AI creates a complete semester-by-semester roadmap",
-    preview: <TypewriterEffect text="Generating 4-year curriculum with prerequisites..." />
+    title: "AI Generates Your Course",
+    description: "Our AI creates a personalized learning curriculum just for you",
+    preview: <TypewriterEffect text="Creating personalized lesson plan..." />
   },
   {
-    title: "Create Lessons",
-    description: "Generate detailed lessons for each course topic",
-    preview: <TypewriterEffect text="Building interactive lessons with examples..." />
+    title: "Learn with Interactive Content",
+    description: "Engage with AI-generated lessons, examples, and explanations",
+    preview: <TypewriterEffect text="Building interactive learning modules..." />
   },
   {
-    title: "Practice & Test",
-    description: "Take custom tests to master the material",
-    preview: <TypewriterEffect text="Creating personalized practice tests..." />
+    title: "Practice & Master Skills",
+    description: "Test your knowledge with custom quizzes and exercises",
+    preview: <TypewriterEffect text="Generating practice questions..." />
   }
 ];
 
-// Updated for university subjects/fields
+// Available subjects for learning
 const subjects = [
   { name: 'Computer Science', icon: FaBrain },
+  { name: 'Business & Finance', icon: FaBookOpen },
   { name: 'Engineering', icon: FaRocket },
-  { name: 'Business', icon: FaChartLine },
-  { name: 'Medicine', icon: FaUsers },
   { name: 'Mathematics', icon: FaClipboardList },
-  { name: 'Psychology', icon: FaBrain },
-  { name: 'Literature', icon: FaBookOpen },
-  { name: 'Physics', icon: FaRocket },
-  { name: 'Economics', icon: FaChartLine }
+  { name: 'Language Learning', icon: FaUsers },
+  { name: 'Science & Technology', icon: FaBrain }
 ];
 
-// Updated sections for UniAi
-const workflowSections = [
+// Platform sections
+const platformSections = [
   {
     id: "overview",
     title: "Overview",
-    description: "AI-powered university course planning for every degree",
+    description: "AI-powered learning platform that generates personalized courses",
     bgColor: "bg-white dark:bg-[#0B1120]"
   },
   {
-    id: "course-planning",
-    title: "Course Planning",
-    description: "Complete degree roadmaps tailored to your university",
-    bgColor: "bg-slate-50 dark:bg-[#0B1120]",
-    metrics: [
-      { label: "Universities", value: "500+" },
-      { label: "Degree Programs", value: "1000+" },
-      { label: "Success Rate", value: "95%" }
-    ]
+    id: "how-it-works",
+    title: "How It Works",
+    description: "Simple steps to start your personalized learning journey",
+    bgColor: "bg-slate-50 dark:bg-[#0B1120]"
   },
   {
-    id: "lesson-generation",
-    title: "Lesson Generation",
-    description: "AI-generated lessons for every course in your program",
-    bgColor: "bg-white dark:bg-[#0B1120]",
-    metrics: [
-      { label: "Lessons Created", value: "50K+" },
-      { label: "Topics Covered", value: "10K+" },
-      { label: "Study Time Saved", value: "40hrs/week" }
-    ]
-  },
-  {
-    id: "practice-tests",
-    title: "Practice Tests",
-    description: "Custom tests and quizzes to reinforce your learning",
-    bgColor: "bg-slate-50 dark:bg-[#0B1120]",
-    metrics: [
-      { label: "Test Questions", value: "100K+" },
-      { label: "Pass Rate Increase", value: "35%" },
-      { label: "Instant Feedback", value: "100%" }
-    ]
-  },
-  {
-    id: "progress-tracking",
-    title: "Progress Tracking",
-    description: "Monitor your academic journey and stay on track",
-    bgColor: "bg-white dark:bg-[#0B1120]",
-    metrics: [
-      { label: "Progress Analytics", value: "Real-time" },
-      { label: "Goal Setting", value: "Smart" },
-      { label: "Graduation Prep", value: "Guided" }
-    ]
+    id: "features",
+    title: "Features",
+    description: "Everything you need to accelerate your learning",
+    bgColor: "bg-white dark:bg-[#0B1120]"
   },
   {
     id: "pricing",
     title: "Pricing",
-    description: "Affordable plans for every student's budget",
+    description: "Simple, transparent pricing for everyone",
     bgColor: "bg-slate-50 dark:bg-[#0B1120]"
   }
 ];
 
-// Custom Hook to create section progress values
-function useSectionProgressValues(numSections: number) {
-  const { scrollYProgress } = useScroll();
-  
-  // Create all transforms at once, at the top level
-  const section1Progress = useTransform(
-    scrollYProgress,
-    [0 / numSections, 1 / numSections],
-    [0, 1]
-  );
-  const section2Progress = useTransform(
-    scrollYProgress,
-    [1 / numSections, 2 / numSections],
-    [0, 1]
-  );
-  const section3Progress = useTransform(
-    scrollYProgress,
-    [2 / numSections, 3 / numSections],
-    [0, 1]
-  );
-  const section4Progress = useTransform(
-    scrollYProgress,
-    [3 / numSections, 4 / numSections],
-    [0, 1]
-  );
-
-  return [section1Progress, section2Progress, section3Progress, section4Progress];
-}
-
-// Updated feature cards for UniAi
+// Feature cards for the platform
 const featureCards = [
   {
-    title: "Smart Course Planning",
-    description: "AI-generated degree roadmaps with prerequisites",
-    icon: <GraduationCap className="h-6 w-6 text-primary" />,
+    title: "AI-Generated Courses",
+    description: "Personalized learning paths created by advanced AI",
+    icon: <Sparkles className="h-6 w-6 text-primary" />,
     bgGradient: "from-blue-500/10 to-purple-500/10"
   },
   {
     title: "Interactive Lessons",
-    description: "Engaging content for every course topic",
+    description: "Engaging content with examples and explanations",
     icon: <BookOpen className="h-6 w-6 text-primary" />,
     bgGradient: "from-green-500/10 to-emerald-500/10"
   },
   {
-    title: "Custom Testing",
-    description: "Personalized practice tests and quizzes",
+    title: "Custom Practice Tests",
+    description: "Reinforce learning with personalized quizzes",
     icon: <ClipboardCheck className="h-6 w-6 text-primary" />,
     bgGradient: "from-orange-500/10 to-red-500/10"
   },
   {
-    title: "AI Tutoring",
-    description: "Get help whenever you're stuck",
-    icon: <Brain className="h-6 w-6 text-primary" />,
+    title: "Progress Tracking",
+    description: "Monitor your learning journey and achievements",
+    icon: <Target className="h-6 w-6 text-primary" />,
     bgGradient: "from-purple-500/10 to-pink-500/10"
   },
   {
-    title: "Goal Tracking",
-    description: "Stay motivated with progress tracking",
-    icon: <Target className="h-6 w-6 text-primary" />,
+    title: "Flexible Learning",
+    description: "Learn at your own pace, anytime, anywhere",
+    icon: <Zap className="h-6 w-6 text-primary" />,
     bgGradient: "from-cyan-500/10 to-blue-500/10"
   },
   {
-    title: "Study Groups",
-    description: "Connect with classmates and study together",
-    icon: <Users className="h-6 w-6 text-primary" />,
+    title: "Multiple Subjects",
+    description: "Access courses across various fields and topics",
+    icon: <GraduationCap className="h-6 w-6 text-primary" />,
     bgGradient: "from-indigo-500/10 to-purple-500/10"
   }
 ];
 
 export default function LandingPage() {
-  const { isInTrial } = useTrialStatus();
   const [activeSection, setActiveSection] = useState("overview");
-  const sectionProgressValues = useSectionProgressValues(workflowSections.length);
-  
   const router = useRouter();
-
-  const [dashboardRef, inView] = useInView({
-    triggerOnce: true,
-    threshold: 0.1
-  });
-
-  const { scrollYProgress } = useScroll();
-
   const [isVideoModalOpen, setIsVideoModalOpen] = useState(false);
 
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-[#0B1120] relative">
-      {/* Enhanced Sticky Navigation */}
+      {/* Navigation */}
       <nav className="sticky top-0 z-50 bg-white/80 dark:bg-neutral-darker/80 backdrop-blur-sm border-b border-slate-200 dark:border-slate-700">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center py-4 overflow-x-auto hide-scrollbar">
-            {workflowSections.map((section, index) => (
+            {platformSections.map((section, index) => (
               <ScrollLink
                 key={section.id}
                 to={section.id}
@@ -239,7 +159,7 @@ export default function LandingPage() {
         </div>
       </nav>
 
-      {/* Hero Section - UniAi Overview */}
+      {/* Hero Section */}
       <div id="overview" className="relative overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-br from-primary-light/10 to-accent-light/10" />
         
@@ -254,75 +174,44 @@ export default function LandingPage() {
                 </h1>
               </div>
               <h2 className="text-2xl sm:text-3xl lg:text-4xl font-semibold text-slate-700 dark:text-slate-300 mb-6">
-                AI-Powered University Course Planning
+                AI-Powered Learning Platform
               </h2>
               <p className="mt-6 max-w-3xl mx-auto text-lg text-slate-600 dark:text-slate-300">
-                Generate complete degree roadmaps, create interactive lessons for every course, 
-                and practice with custom tests. Your personal AI study companion for university success.
+                Generate personalized courses with AI guidance. Learn at your own pace with interactive lessons, 
+                custom practice tests, and comprehensive progress tracking.
               </p>
               
               {/* Key Benefits */}
               <div className="mt-8 flex flex-wrap justify-center gap-6 text-sm">
                 <div className="flex items-center text-slate-600 dark:text-slate-400">
-                  <FaClock className="mr-2 text-primary" />
-                  Save 40+ hours per week
+                  <FaCheck className="mr-2 text-primary" />
+                  Personalized learning paths
                 </div>
                 <div className="flex items-center text-slate-600 dark:text-slate-400">
-                  <FaAward className="mr-2 text-primary" />
-                  Improve grades by 35%
+                  <FaCheck className="mr-2 text-primary" />
+                  Interactive AI lessons
                 </div>
                 <div className="flex items-center text-slate-600 dark:text-slate-400">
-                  <FaUsers className="mr-2 text-primary" />
-                  Join 50,000+ students
+                  <FaCheck className="mr-2 text-primary" />
+                  Custom practice tests
                 </div>
               </div>
               
               {/* CTA Buttons */}
               <div className="mt-10 flex gap-4 justify-center">
-                <motion.button
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
-                  onClick={() => setIsVideoModalOpen(true)}
-                  className="px-8 py-3 bg-primary hover:bg-primary-dark text-white rounded-lg shadow-lg hover:shadow-xl transition-all"
-                >
-                  Watch Demo
-                </motion.button>
+
                 <button 
                   onClick={() => router.push('/login')} 
                   className="px-8 py-3 bg-white dark:bg-neutral-dark hover:bg-slate-50 dark:hover:bg-neutral-darker text-primary dark:text-primary-light border-2 border-primary dark:border-primary-light rounded-lg shadow-lg hover:shadow-xl transition-all"
                 >
-                  Start Free Trial
+                  Start Learning
                 </button>
               </div>
             </div>
 
-            {/* Combined Preview: Code + Workflow Steps */}
-            <div className="mt-16 grid grid-cols-1 lg:grid-cols-2 gap-8">
-              {/* Code Preview - Educational Theme */}
-              <div className="relative">
-                <pre className="relative rounded-xl bg-slate-900 p-8 shadow-2xl">
-                  <code className="text-sm sm:text-base text-slate-100">
-                    <TypewriterEffect text={`// 🎓 Your AI Study Assistant
-import { useUniAi } from '@/hooks/education';
+            {/* Preview Section */}
+            <div className="mt-16 grid grid-cols-1 lg:grid-cols-1 gap-8">
 
-export const StudentLife = () => {
-  const { courses, lessons, tests } = useUniAi();
-  
-  return (
-    <div className="university-success">
-      <CoursePlan degree="Computer Science" />
-      <LessonGenerator topic="Data Structures" />
-      <CustomTest subject="Algorithms" />
-      
-      <Status>
-        {courses.completed}% Complete
-        Grade: {calculateGPA(tests)} 📈
-      </Status>
-    </div>
-  );`} />
-                  </code>
-                </pre>
-              </div>
 
               {/* Workflow Steps */}
               <div className="grid grid-cols-1 gap-4">
@@ -347,33 +236,22 @@ export const StudentLife = () => {
               </div>
             </div>
 
-            {/* Feature Cards Grid */}
+            {/* Available Subjects */}
             <div className="mt-20">
-              <h3 className="text-2xl font-bold text-center text-slate-900 dark:text-white mb-12">
-                Everything You Need to Succeed
+              <h3 className="text-2xl font-bold text-center text-slate-900 dark:text-white mb-8">
+                Available Learning Subjects
               </h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {featureCards.map((feature, index) => (
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-4 max-w-4xl mx-auto">
+                {subjects.map((subject, index) => (
                   <motion.div
-                    key={feature.title}
+                    key={subject.name}
                     initial={{ opacity: 0, y: 20 }}
                     whileInView={{ opacity: 1, y: 0 }}
                     transition={{ delay: index * 0.1 }}
-                    className={`p-6 rounded-xl bg-gradient-to-br ${feature.bgGradient} border border-white/20 backdrop-blur-sm hover:border-primary/30 transition-all group`}
+                    className="flex items-center p-4 bg-white/5 dark:bg-neutral-dark border border-slate-200 dark:border-slate-700/50 rounded-lg hover:border-primary/50 transition-colors"
                   >
-                    <div className="flex items-start space-x-4">
-                      <div className="flex-shrink-0">
-                        {feature.icon}
-                      </div>
-                      <div>
-                        <h4 className="font-semibold text-slate-900 dark:text-white group-hover:text-primary transition-colors">
-                          {feature.title}
-                        </h4>
-                        <p className="text-sm text-slate-600 dark:text-slate-300 mt-1">
-                          {feature.description}
-                        </p>
-                      </div>
-                    </div>
+                    <subject.icon className="h-5 w-5 text-primary mr-3" />
+                    <span className="text-sm text-slate-700 dark:text-slate-300">{subject.name}</span>
                   </motion.div>
                 ))}
               </div>
@@ -382,57 +260,154 @@ export const StudentLife = () => {
         </div>
       </div>
 
-      {/* Other sections */}
-      {workflowSections.slice(1).map((section, index) => (
-        <motion.section
-          key={section.id}
-          id={section.id}
-          className={`py-20 ${section.bgColor}`}
-          initial={{ opacity: 0, y: 50 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true, margin: "-20%" }}
-          onViewportEnter={() => setActiveSection(section.id)}
-        >
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            {/* Section header */}
-            <div className="text-center mb-12">
-              <h2 className="text-3xl font-bold text-slate-900 dark:text-white">
-                {section.title}
-              </h2>
-              <p className="mt-4 text-lg text-slate-600 dark:text-slate-300">
-                {section.description}
-              </p>
-            </div>
-
-            {/* Clean Metrics Display */}
-            {section.metrics && (
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-4xl mx-auto">
-                {section.metrics.map((metric, i) => (
-                  <motion.div
-                    key={metric.label}
-                    initial={{ opacity: 0, y: 20 }}
-                    whileInView={{ opacity: 1, y: 0 }}
-                    transition={{ delay: i * 0.1 }}
-                    className="bg-white/5 backdrop-blur-sm rounded-xl p-6 border border-white/10"
-                  >
-                    <div className="text-3xl font-bold text-primary mb-2">
-                      {metric.value}
-                    </div>
-                    <div className="text-sm text-slate-500 dark:text-slate-400">
-                      {metric.label}
-                    </div>
-                  </motion.div>
-                ))}
-              </div>
-            )}
-
-            {/* Pricing Section */}
-            {section.id === "pricing" && <PricingSection />}
+      {/* How It Works Section */}
+      <div id="how-it-works" className="py-20 bg-slate-50 dark:bg-[#0B1120]">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-16">
+            <h2 className="text-3xl font-bold text-slate-900 dark:text-white mb-4">
+              How It Works
+            </h2>
+            <p className="text-lg text-slate-600 dark:text-slate-300 max-w-3xl mx-auto">
+              Our AI platform makes learning simple and effective. Here&apos;s how you can get started:
+            </p>
           </div>
-        </motion.section>
-      ))}
 
-      {/* Enhanced CTA Section */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+            {workflowSteps.map((step, index) => (
+              <motion.div
+                key={step.title}
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                transition={{ delay: index * 0.1 }}
+                className="text-center"
+              >
+                <div className="w-16 h-16 bg-primary/10 dark:bg-primary-light/10 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <span className="text-2xl font-bold text-primary">{index + 1}</span>
+                </div>
+                <h3 className="text-xl font-semibold text-slate-900 dark:text-white mb-2">
+                  {step.title}
+                </h3>
+                <p className="text-slate-600 dark:text-slate-300">
+                  {step.description}
+                </p>
+              </motion.div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* Features Section */}
+      <div id="features" className="py-20 bg-white dark:bg-[#0B1120]">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-16">
+            <h2 className="text-3xl font-bold text-slate-900 dark:text-white mb-4">
+              Platform Features
+            </h2>
+            <p className="text-lg text-slate-600 dark:text-slate-300 max-w-3xl mx-auto">
+              Everything you need to accelerate your learning journey
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {featureCards.map((feature, index) => (
+              <motion.div
+                key={feature.title}
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                transition={{ delay: index * 0.1 }}
+                className={`p-6 rounded-xl bg-gradient-to-br ${feature.bgGradient} border border-white/20 backdrop-blur-sm hover:border-primary/30 transition-all group`}
+              >
+                <div className="flex items-start space-x-4">
+                  <div className="flex-shrink-0">
+                    {feature.icon}
+                  </div>
+                  <div>
+                    <h4 className="font-semibold text-slate-900 dark:text-white group-hover:text-primary transition-colors">
+                      {feature.title}
+                    </h4>
+                    <p className="text-sm text-slate-600 dark:text-slate-300 mt-1">
+                      {feature.description}
+                    </p>
+                  </div>
+                </div>
+              </motion.div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* Pricing Section */}
+      <div id="pricing" className="py-20 bg-slate-50 dark:bg-[#0B1120]">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-16">
+            <h2 className="text-3xl font-bold text-slate-900 dark:text-white mb-4">
+              Simple Pricing
+            </h2>
+            <p className="text-lg text-slate-600 dark:text-slate-300 max-w-3xl mx-auto">
+              One plan, unlimited learning. No hidden fees, no complicated tiers.
+            </p>
+          </div>
+
+          <div className="max-w-md mx-auto">
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              className="relative rounded-2xl p-8 bg-white dark:bg-slate-800 shadow-xl border border-slate-200 dark:border-slate-700"
+            >
+              <div className="text-center">
+                <h3 className="text-2xl font-bold text-slate-900 dark:text-white mb-2">
+                  Premium Plan
+                </h3>
+                <div className="mb-6">
+                  <span className="text-4xl font-bold text-slate-900 dark:text-white">$9.99</span>
+                  <span className="text-slate-500 dark:text-slate-400 ml-2">/month</span>
+                </div>
+                <p className="text-slate-600 dark:text-slate-300 mb-8">
+                  Access to all features and unlimited learning
+                </p>
+                
+                <ul className="space-y-3 mb-8 text-left">
+                  <li className="flex items-center text-slate-600 dark:text-slate-300">
+                    <FaCheck className="h-5 w-5 text-primary mr-3" />
+                    AI-generated personalized courses
+                  </li>
+                  <li className="flex items-center text-slate-600 dark:text-slate-300">
+                    <FaCheck className="h-5 w-5 text-primary mr-3" />
+                    Interactive lessons and examples
+                  </li>
+                  <li className="flex items-center text-slate-600 dark:text-slate-300">
+                    <FaCheck className="h-5 w-5 text-primary mr-3" />
+                    Custom practice tests and quizzes
+                  </li>
+                  <li className="flex items-center text-slate-600 dark:text-slate-300">
+                    <FaCheck className="h-5 w-5 text-primary mr-3" />
+                    Progress tracking and analytics
+                  </li>
+                  <li className="flex items-center text-slate-600 dark:text-slate-300">
+                    <FaCheck className="h-5 w-5 text-primary mr-3" />
+                    Multiple subjects and topics
+                  </li>
+                  <li className="flex items-center text-slate-600 dark:text-slate-300">
+                    <FaCheck className="h-5 w-5 text-primary mr-3" />
+                    Learn at your own pace
+                  </li>
+                </ul>
+
+                <motion.button
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                  onClick={() => router.push('/login')}
+                  className="w-full py-3 px-6 bg-primary hover:bg-primary-dark text-white rounded-lg font-medium transition-all"
+                >
+                  Start Learning Today
+                </motion.button>
+              </div>
+            </motion.div>
+          </div>
+        </div>
+      </div>
+
+      {/* Final CTA Section */}
       <motion.div
         initial={{ opacity: 0 }}
         whileInView={{ opacity: 1 }}
@@ -445,30 +420,23 @@ export const StudentLife = () => {
               <motion.h2 
                 initial={{ y: 20 }}
                 whileInView={{ y: 0 }}
-                className="text-3xl font-bold text-slate-900 dark:text-white"
+                className="text-3xl font-bold text-slate-900 dark:text-white mb-4"
               >
-                Ready to Transform Your University Experience?
+                Ready to Start Your Learning Journey?
               </motion.h2>
-              <p className="mt-4 text-lg text-slate-600 dark:text-slate-300">
-                Join thousands of students who are already succeeding with UniAi
+              <p className="text-lg text-slate-600 dark:text-slate-300 mb-8">
+                Join learners who are already accelerating their education with AI-powered courses
               </p>
               
-              <div className="mt-10 flex gap-4 justify-center">
-                <motion.button
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
-                  onClick={() => setIsVideoModalOpen(true)}
-                  className="px-8 py-3 bg-primary hover:bg-primary-dark text-white rounded-lg shadow-lg hover:shadow-xl transition-all"
-                >
-                  Watch Demo
-                </motion.button>
+              <div className="flex gap-4 justify-center">
+
                 <motion.button 
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
                   onClick={() => router.push('/login')}
                   className="px-8 py-3 bg-white dark:bg-neutral-dark hover:bg-slate-50 dark:hover:bg-neutral-darker text-primary dark:text-primary-light border-2 border-primary dark:border-primary-light rounded-lg shadow-lg hover:shadow-xl transition-all"
                 >
-                  Start Free Trial
+                  Start Learning
                 </motion.button>
               </div>
             </div>

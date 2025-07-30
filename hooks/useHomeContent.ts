@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import type { HomeContentResponse } from '@/types/education';
 
@@ -16,7 +16,7 @@ export function useHomeContent() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const fetchHomeContent = async () => {
+  const fetchHomeContent = useCallback(async () => {
     if (!session?.access_token) {
       setError('No authentication token available');
       setIsLoading(false);
@@ -55,11 +55,11 @@ export function useHomeContent() {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [session?.access_token]);
 
   useEffect(() => {
     fetchHomeContent();
-  }, [session?.access_token]);
+  }, [fetchHomeContent]);
 
   return {
     ...data,

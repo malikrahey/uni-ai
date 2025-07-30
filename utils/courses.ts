@@ -44,28 +44,45 @@ export async function generateDegreeOutline(
   courseCount: number = 8
 ): Promise<CourseTemplate[]> {
   try {
+
+    const systemPrompt = `
+    <task>
+    You are a curriculum designer for a university. You will be given a degree name, description, and target level.
+    Your job is to generate a comprehensive curriculum for the degree, equivalent to a degree that may be offered at a university. 
+    </task>
+
+    <constraints>
+    Return only valid JSON.
+    </constraints>
+
+    <response_format>
+    {
+      "courses": [
+        {
+          "name": "Course Name",
+          "description": "Course description",
+          "icon": "📚",
+          "estimatedDuration": "8-10 weeks",
+          "prerequisites": [],
+          "learningObjectives": ["objective1", "objective2"]
+        }
+      ]
+    }
+    </response_format>
+
+    `;
+
     const prompt = `Generate a curriculum for a ${degreeName} degree with ${courseCount} courses. 
 
 Return JSON with this structure:
-{
-  "courses": [
-    {
-      "name": "Course Name",
-      "description": "Course description",
-      "icon": "📚",
-      "estimatedDuration": "8-10 weeks",
-      "prerequisites": [],
-      "learningObjectives": ["objective1", "objective2"]
-    }
-  ]
-}`;
+`;
 
     const response = await openai.chat.completions.create({
       model: "gpt-4.1-nano",
       messages: [
         {
           role: "system",
-          content: "You are a curriculum designer. Return only valid JSON."
+          content: systemPrompt
         },
         {
           role: "user",
