@@ -1,6 +1,6 @@
-# Subscription-Based Access Control Implementation
+# Subscription Implementation Guide
 
-This document outlines the implementation of subscription-based access control for lesson and degree generation in the UniAI platform.
+This document outlines the implementation of subscription-based access control for lesson and degree generation in the Acceluni platform.
 
 ## Overview
 

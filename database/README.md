@@ -1,6 +1,6 @@
-# Database Setup for UniAi Courses System
+# Database Setup for Acceluni Courses System
 
-This directory contains the database schema and setup instructions for the UniAi courses management system.
+This directory contains the database schema and setup instructions for the Acceluni courses management system.
 
 ## Prerequisites
 

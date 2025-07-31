@@ -48,12 +48,25 @@ export async function generateDegreeOutline(
     const systemPrompt = `
     <task>
     You are a curriculum designer for a university. You will be given a degree name, description, and target level.
-    Your job is to generate a comprehensive curriculum for the degree, equivalent to a degree that may be offered at a university. 
+    Your job is to generate a comprehensive course outline for the degree, equivalent to a degree that may be offered at a university. 
     </task>
+
+    <guidelines>
+    - Degrees are generally 4-5 years long, with 10 courses per year
+    - Courses should progress in difficulty, with each course building on the previous ones
+    </guidelines>
 
     <constraints>
     Return only valid JSON.
     </constraints>
+
+    <input_format>
+    {
+      "degreeName": "Degree Name",
+      "degreeDescription": "Degree description",
+      "targetLevel": "beginner" | "intermediate" | "advanced" | "professional"
+    }
+    </input_format>
 
     <response_format>
     {
@@ -72,13 +85,15 @@ export async function generateDegreeOutline(
 
     `;
 
-    const prompt = `Generate a curriculum for a ${degreeName} degree with ${courseCount} courses. 
-
-Return JSON with this structure:
-`;
+    const prompt = JSON.stringify({
+      degreeName: degreeName,
+      degreeDescription: degreeDescription,
+      targetLevel: targetLevel,
+      courseCount: courseCount
+    });
 
     const response = await openai.chat.completions.create({
-      model: "gpt-4.1-nano",
+      model: "gpt-4.1-mini",
       messages: [
         {
           role: "system",
@@ -111,31 +126,66 @@ export async function generateCourseOutline(
   courseName: string,
   courseDescription: string,
   degreeContext: string,
-  lessonCount: number = 12
+  lessonCount: number = 12,
+  expertiseLevel: string = "intermediate"
 ): Promise<LessonTemplate[]> {
   try {
-    const prompt = `Generate ${lessonCount} lessons for course "${courseName}".
+    const systemPrompt = `
+    <task>
+    You are a curriculum designer for a university. You will be given a course name, description, and degree context.
+    Your job is to generate a comprehensive course outline for the course, equivalent to a course that may be offered at a university. 
+    </task>
 
-Return JSON with this structure:
-{
-  "lessons": [
+    <guidelines>
+    - Courses are generally 12-16 weeks long, with 12-16 lessons
+    - Lessons should progress in difficulty, with each lesson building on the previous ones
+    </guidelines>
+
+    <input_format>
     {
-      "name": "Lesson Name",
-      "description": "Lesson description",
-      "icon": "📝",
-      "estimatedReadingTime": "15-20 minutes",
-      "difficulty": "beginner",
-      "learningObjectives": ["objective1", "objective2"]
+      "courseName": "Course Name",
+      "courseDescription": "Course description",
+      "degreeContext": "Degree context",
+      "expertiseLevel": "beginner" | "intermediate" | "advanced" | "professional",
+      "lessonCount": 12
     }
-  ]
-}`;
+    </input_format>
+
+    <response_format>
+    {
+      "lessons": [
+        {
+          "name": "Lesson Name",
+          "description": "Lesson description",
+          "icon": "📝",
+          "estimatedReadingTime": "15-20 minutes",
+          "difficulty": "beginner",
+          "learningObjectives": ["objective1", "objective2"]
+        }
+      ]
+    }
+    </response_format>
+    
+    
+    
+    `;
+
+    const prompt = JSON.stringify(
+      {
+        courseName: courseName,
+        courseDescription: courseDescription,
+        degreeContext: degreeContext,
+        expertiseLevel: expertiseLevel,
+        lessonCount: lessonCount
+      }
+    );
 
     const response = await openai.chat.completions.create({
       model: "gpt-4.1-nano",
       messages: [
         {
           role: "system",
-          content: "You are an instructional designer. Return only valid JSON."
+          content: systemPrompt
         },
         {
           role: "user",

@@ -1,4 +1,4 @@
-# 🔧 Database Setup Instructions - UniAi Educational Platform
+# 🔧 Database Setup Instructions - Acceluni Educational Platform
 
 ## 🚨 **CRITICAL ISSUES FOUND**
 

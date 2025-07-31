@@ -1,7 +1,7 @@
 import { Metadata } from 'next';
 
 export const metadata: Metadata = {
-  title: 'Degrees | UniAi',
+  title: 'Degrees | Acceluni',
   description: 'Manage your degree programs and academic pathways',
 };
 

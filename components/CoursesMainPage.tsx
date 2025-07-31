@@ -171,7 +171,7 @@ export default function CoursesMainPage() {
                 Welcome back, {user?.email?.split('@')[0]}! 🎓
               </h1>
               <p className="mt-2 text-lg text-slate-600 dark:text-slate-300">
-                Continue your academic journey with UniAi
+                Continue your academic journey with Acceluni
               </p>
             </div>
             

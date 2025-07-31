@@ -1,4 +1,4 @@
--- Complete Database Schema for UniAi Educational Platform
+-- Complete Database Schema for Acceluni Educational Platform
 -- This file contains ALL required tables with proper relationships
 -- Run this in your Supabase SQL Editor
 

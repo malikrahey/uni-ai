@@ -1,4 +1,4 @@
-# UniAi - AI-Powered University Course Planning Platform
+# Acceluni - AI-Powered University Course Planning Platform
 
 An AI-powered platform for creating comprehensive university course plans, generating interactive lessons, and building custom practice tests. Built with Next.js, Stripe, and Supabase for a complete educational experience.
 
@@ -51,8 +51,8 @@ An AI-powered platform for creating comprehensive university course plans, gener
 1. Clone the repository:
 
 ```bash
-git clone https://github.com/yourusername/uni-ai.git
-cd uni-ai
+git clone https://github.com/yourusername/acceluni.git
+cd acceluni
 npm install
 ```
 

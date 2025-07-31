@@ -1,4 +1,4 @@
--- Database schema for UniAi courses system
+-- Database schema for Acceluni courses system
 -- This file contains the SQL commands to create the necessary tables for course management
 
 -- Enable UUID extension if not already enabled

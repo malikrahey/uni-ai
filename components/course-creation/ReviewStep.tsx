@@ -108,7 +108,7 @@ export default function ReviewStep({
         // Create a standalone course (existing logic with new schema)
         const courseData = {
           title: `${formData.subject} - ${formatPlanType(formData.planType)}`,
-          university: 'UniAi Academy',
+          university: 'Acceluni Academy',
           degree_type: formData.subject,
           duration_years: formData.planType === 'crash-course' ? 1 : (formData.planType === 'course' ? 1 : 4),
           description: `A ${formatPlanType(formData.planType)} in ${formData.subject}. Starting from ${formData.startingLevel} level, targeting ${formData.desiredLevel} expertise.`,

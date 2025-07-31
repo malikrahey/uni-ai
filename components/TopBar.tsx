@@ -54,7 +54,7 @@ export default function TopBar() {
       <div className="max-w-7xl mx-auto flex justify-between items-center px-4 py-3">
         <Link href="/" className="text-md sm:text-lg font-medium text-text dark:text-text-dark flex items-center gap-3 hover:opacity-80 transition-opacity">
           <FaGraduationCap className="h-8 w-8 text-primary" />
-          <span className="font-bold text-xl">UniAi</span>
+          <span className="font-bold text-xl">Acceluni</span>
         </Link>
 
         <div className="flex items-center gap-4">

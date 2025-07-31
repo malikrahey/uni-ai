@@ -170,7 +170,7 @@ export default function LandingPage() {
               <div className="flex items-center justify-center mb-6">
                 <FaGraduationCap className="h-12 w-12 text-primary mr-4" />
                 <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-slate-900 dark:text-white">
-                  UniAi
+                  Acceluni
                 </h1>
               </div>
               <h2 className="text-2xl sm:text-3xl lg:text-4xl font-semibold text-slate-700 dark:text-slate-300 mb-6">
