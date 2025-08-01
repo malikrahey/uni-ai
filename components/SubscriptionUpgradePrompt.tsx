@@ -63,7 +63,7 @@ export function SubscriptionUpgradePrompt({
 
   if (variant === 'banner') {
     return (
-      <div className={`bg-gradient-to-r from-blue-500 to-purple-600 text-white p-4 ${className}`}>
+      <div className={`bg-gradient-to-r from-blue-500 to-sky-500 text-white p-4 ${className}`}>
         <div className="flex items-center justify-between">
           <div className="flex-1">
             <h3 className="font-semibold text-lg">{title}</h3>

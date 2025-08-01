@@ -52,9 +52,9 @@ export default function TopBar() {
   return (
     <div className="w-full bg-surface-light dark:bg-surface-dark border-b border-gray-200 dark:border-gray-700">
       <div className="max-w-7xl mx-auto flex justify-between items-center px-4 py-3">
-        <Link href="/" className="text-md sm:text-lg font-medium text-text dark:text-text-dark flex items-center gap-3 hover:opacity-80 transition-opacity">
+        <Link href="/" className="text-md sm:text-lg font-medium text-slate-700 dark:text-slate-200 flex items-center gap-3 hover:opacity-80 transition-opacity">
           <FaGraduationCap className="h-8 w-8 text-primary" />
-          <span className="font-bold text-xl">Acceluni</span>
+          <span className="font-bold text-xl text-slate-800 dark:text-slate-100">Acceluni</span>
         </Link>
 
         <div className="flex items-center gap-4">
@@ -100,7 +100,7 @@ export default function TopBar() {
                   onClick={() => setIsDropdownOpen(!isDropdownOpen)}
                   className="flex items-center gap-2 hover:bg-neutral-darker/10 dark:hover:bg-neutral-darker/50 px-3 py-2 rounded-full transition-colors"
                 >
-                  <div className="w-8 h-8 bg-primary/10 dark:bg-primary/20 rounded-full flex items-center justify-center text-primary dark:text-primary-light">
+                  <div className="w-8 h-8 bg-primary/10 dark:bg-primary/20 rounded-full flex items-center justify-center text-slate-700 dark:text-slate-200 font-semibold">
                     {user.email?.[0].toUpperCase()}
                   </div>
                 </button>
@@ -109,7 +109,7 @@ export default function TopBar() {
                   <div className="absolute right-0 mt-2 w-48 bg-surface-light dark:bg-surface-dark rounded-lg shadow-hover py-1 z-[60] border border-gray-200 dark:border-gray-700">
                     <Link
                       href="/profile"
-                      className="block px-4 py-2 text-sm text-text dark:text-text-dark hover:bg-neutral dark:hover:bg-neutral-dark"
+                      className="block px-4 py-2 text-sm text-slate-700 dark:text-slate-200 hover:bg-neutral dark:hover:bg-neutral-dark hover:text-slate-900 dark:hover:text-slate-100"
                       onClick={(e) => {
                         e.preventDefault();
                         setIsDropdownOpen(false);

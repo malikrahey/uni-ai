@@ -32,7 +32,6 @@ export default function ProtectedRoute({ children }: { children: React.ReactNode
     return (
       <div className="min-h-screen flex flex-col space-y-4 items-center justify-center">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
-        <div>Loading at lightspeed ⚡️</div>
       </div>
     );
   }

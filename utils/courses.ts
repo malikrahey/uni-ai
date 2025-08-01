@@ -54,6 +54,7 @@ export async function generateDegreeOutline(
     <guidelines>
     - Degrees are generally 4-5 years long, with 10 courses per year
     - Courses should progress in difficulty, with each course building on the previous ones
+    - Avoid making capstone or project courses
     </guidelines>
 
     <constraints>
@@ -139,6 +140,7 @@ export async function generateCourseOutline(
     <guidelines>
     - Courses are generally 12-16 weeks long, with 12-16 lessons
     - Lessons should progress in difficulty, with each lesson building on the previous ones
+    - Avoid making capstone or project lessons
     </guidelines>
 
     <input_format>
@@ -219,30 +221,67 @@ export async function generateCourseLesson(
   difficulty: string = 'intermediate'
 ): Promise<LessonContent> {
   try {
-    const prompt = `Generate lesson content and test for "${lessonName}".
 
-Return JSON with this structure:
-{
-  "content": "# Lesson Title\\n\\nLesson content in markdown...",
-  "test": {
-    "questions": [
-      {
-        "question": "Question text?",
-        "answerType": "multiple choice",
-        "options": ["A", "B", "C", "D"],
-        "answer": 0,
-        "explanation": "Why this is correct."
+    const systemPrompt = `
+    <task>
+    You are a lesson creator for a university. You will be given a lesson name, description, and course context.
+    Your job is to generate a lesson content and test for the lesson.
+
+    You will be given a lesson name, description, course name, degree context, and difficulty level.
+    You will need to generate a detailed lesson for the student on the topic as a part of their course in the given degree.
+    The lesson should give the student a comprehensive understanding of the topic and prepare them for the course.
+    </task>
+
+    <guidelines>
+    - The lesson should be 10-15 minutes long
+    - Write in an engaging and interactive manner
+    - Use examples when relevant
+    - Use markdown formatting
+    </guidelines>
+
+    <input_format>
+    {
+      "lessonName": "Lesson Name",
+      "lessonDescription": "Lesson description",
+      "courseName": "Course Name",
+      "degreeContext": "Degree context",
+      "difficulty": "beginner" | "intermediate" | "advanced" | "professional"
+    }
+    </input_format>
+
+    <response_format>
+    {
+      "content": "# Lesson Title\\n\\nLesson content in markdown...",
+      "test": {
+        "questions": [
+          {
+            "question": "Question text?",
+            "answerType": "multiple choice",
+            "options": ["A", "B", "C", "D"],
+            "answer": 0,
+            "explanation": "Why this is correct."
+          }
+        ]
       }
-    ]
-  }
-}`;
+    }
+    </response_format>
+    `
+    
+    
+    const prompt = JSON.stringify({
+      lessonName: lessonName,
+      lessonDescription: lessonDescription,
+      courseName: courseName,
+      degreeContext: degreeContext,
+      difficulty: difficulty
+    });
 
     const response = await openai.chat.completions.create({
-      model: "gpt-4.1-nano",
+      model: "gpt-4.1-mini",
       messages: [
         {
           role: "system",
-          content: "You are an educator. Return only valid JSON."
+          content: systemPrompt
         },
         {
           role: "user",
@@ -250,7 +289,7 @@ Return JSON with this structure:
         }
       ],
       temperature: 0.6,
-      max_tokens: 4000,
+      max_tokens: 16000,
     });
 
     const content = response.choices[0]?.message?.content;

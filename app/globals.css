@@ -3,12 +3,48 @@
 @tailwind utilities;
 
 :root {
+  /* Light Blue Color Scheme - RGB values for Tailwind compatibility */
+  --color-primary: 59 130 246;      /* Blue-500: Primary blue */
+  --color-primary-light: 96 165 250; /* Blue-400: Light blue */
+  --color-primary-dark: 37 99 235;   /* Blue-600: Dark blue */
+  
+  --color-accent: 14 165 233;        /* Sky-500: Light blue accent */
+  --color-accent-light: 56 189 248;  /* Sky-400: Light sky blue */
+  --color-accent-dark: 2 132 199;    /* Sky-600: Dark sky blue */
+  
+  --color-danger: 220 38 38;         /* Red-600: Danger red */
+  --color-danger-light: 248 113 113; /* Red-400: Light red */
+  --color-danger-dark: 185 28 28;    /* Red-700: Dark red */
+  
+  --color-neutral: 248 250 252;      /* Slate-50: Light neutral */
+  --color-neutral-dark: 30 41 59;    /* Slate-800: Dark neutral */
+  --color-neutral-darker: 15 23 42;  /* Slate-900: Darker neutral */
+  
+  --color-text: 15 23 42;            /* Slate-900: Dark text */
+  --color-text-light: 100 116 139;   /* Slate-500: Light text */
+  --color-text-dark: 248 250 252;    /* Slate-50: Light text for dark mode */
+  
+  --color-surface-light: 255 255 255; /* White surface */
+  --color-surface-dark: 30 41 59;    /* Slate-800: Dark surface */
+  
   --background: #F8F9FA;
   --foreground: #2F3E46;
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
+    --color-primary: 96 165 250;     /* Blue-400: Brighter for dark mode */
+    --color-primary-light: 147 197 253; /* Blue-300: Lighter for dark mode */
+    --color-primary-dark: 59 130 246;  /* Blue-500: Standard for dark mode */
+    
+    --color-accent: 56 189 248;      /* Sky-400: Brighter for dark mode */
+    --color-accent-light: 125 211 252; /* Sky-300: Lighter for dark mode */
+    --color-accent-dark: 14 165 233;  /* Sky-500: Standard for dark mode */
+    
+    --color-text: 248 250 252;       /* Slate-50: Light text for dark mode */
+    --color-text-light: 148 163 184; /* Slate-400: Lighter text for dark mode */
+    --color-text-dark: 15 23 42;     /* Slate-900: Dark text for light elements */
+    
     --background: #1A1B26;
     --foreground: #F8F9FA;
   }
@@ -18,21 +54,6 @@ body {
   color: var(--foreground);
   background: var(--background);
   font-family: 'Inter', sans-serif;
-}
-
-/* Add some cooking-themed utility classes */
-@layer components {
-  .recipe-card {
-    @apply bg-white dark:bg-neutral-dark rounded-lg shadow-sm border border-primary/10 dark:border-primary/20 transition-all duration-300 hover:shadow-md;
-  }
-  
-  .cooking-button {
-    @apply bg-primary hover:bg-primary-dark text-white rounded-lg transition-all duration-300 transform hover:scale-102 active:scale-98;
-  }
-  
-  .accent-button {
-    @apply bg-secondary hover:bg-secondary-dark text-white rounded-lg transition-all duration-300;
-  }
 }
 
 /* Hide scrollbar styles */

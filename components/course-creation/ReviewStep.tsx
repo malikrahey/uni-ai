@@ -286,7 +286,7 @@ export default function ReviewStep({
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.5 }}
-          className="bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-900/20 dark:to-purple-900/20 rounded-xl p-6 mb-8 border border-blue-200 dark:border-blue-800"
+          className="bg-gradient-to-r from-blue-50 to-sky-50 dark:from-blue-900/20 dark:to-sky-900/20 rounded-xl p-6 mb-8 border border-blue-200 dark:border-blue-800"
         >
           <div className="flex items-center gap-3 mb-4">
             <Sparkles className="h-6 w-6 text-blue-600 dark:text-blue-400" />

@@ -79,7 +79,7 @@ const featureCards = [
     title: "AI-Generated Courses",
     description: "Personalized learning paths created by advanced AI",
     icon: <Sparkles className="h-6 w-6 text-primary" />,
-    bgGradient: "from-blue-500/10 to-purple-500/10"
+    bgGradient: "from-blue-500/10 to-sky-500/10"
   },
   {
     title: "Interactive Lessons",
@@ -97,7 +97,7 @@ const featureCards = [
     title: "Progress Tracking",
     description: "Monitor your learning journey and achievements",
     icon: <Target className="h-6 w-6 text-primary" />,
-    bgGradient: "from-purple-500/10 to-pink-500/10"
+    bgGradient: "from-sky-500/10 to-blue-500/10"
   },
   {
     title: "Flexible Learning",
@@ -109,7 +109,7 @@ const featureCards = [
     title: "Multiple Subjects",
     description: "Access courses across various fields and topics",
     icon: <GraduationCap className="h-6 w-6 text-primary" />,
-    bgGradient: "from-indigo-500/10 to-purple-500/10"
+    bgGradient: "from-blue-500/10 to-sky-500/10"
   }
 ];
 
@@ -148,8 +148,8 @@ export default function LandingPage() {
                 <span 
                   className={`text-sm font-medium transition-colors duration-300 hidden md:block whitespace-nowrap
                     ${activeSection === section.id 
-                    ? 'text-primary dark:text-primary-light' 
-                    : 'text-slate-600 dark:text-slate-300 group-hover:text-primary dark:group-hover:text-primary-light'}`}
+                    ? 'text-slate-800 dark:text-slate-100' 
+                    : 'text-slate-600 dark:text-slate-300 group-hover:text-slate-800 dark:group-hover:text-slate-100'}`}
                 >
                   {section.title}
                 </span>
