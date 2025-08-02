@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import ReactMarkdown from 'react-markdown';
@@ -32,8 +32,9 @@ export default function LessonDetailPage() {
   const [lesson, setLesson] = useState<Lesson | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [autoGenerationTriggered, setAutoGenerationTriggered] = useState(false);
+  const [hasAttemptedAutoGeneration, setHasAttemptedAutoGeneration] = useState(false);
   const [generationType, setGenerationType] = useState<'content' | 'test' | null>(null);
+  const isInitialized = useRef(false);
   
   // Test-related state
   const [isTestExpanded, setIsTestExpanded] = useState(false);
@@ -85,7 +86,7 @@ export default function LessonDetailPage() {
   }, [session?.access_token, lessonId]);
 
   const triggerAutoGeneration = useCallback(async (lessonData: Lesson) => {
-    if (autoGenerationTriggered || isGenerating) return;
+    if (hasAttemptedAutoGeneration || isGenerating) return;
 
     // Check if content is empty or minimal
     const isEmpty = !lessonData.content || 
@@ -98,7 +99,7 @@ export default function LessonDetailPage() {
                      lessonData.test.questions.length === 0;
 
     if (isEmpty || hasNoTest) {
-      setAutoGenerationTriggered(true);
+      setHasAttemptedAutoGeneration(true);
       
       try {
         if (isEmpty) {
@@ -123,20 +124,21 @@ export default function LessonDetailPage() {
         setGenerationType(null);
       }
     }
-  }, [autoGenerationTriggered, isGenerating, lessonId, generateContent, generateTest, fetchLessonDetail]);
+  }, [hasAttemptedAutoGeneration, isGenerating, lessonId, generateContent, generateTest, fetchLessonDetail]);
 
   useEffect(() => {
     const loadLesson = async () => {
-      if (!session?.access_token || !lessonId) return;
+      if (!session?.access_token || !lessonId || isInitialized.current) return;
       
+      isInitialized.current = true;
       const lessonData = await fetchLessonDetail();
-      if (lessonData && !autoGenerationTriggered) {
+      if (lessonData && !hasAttemptedAutoGeneration) {
         await triggerAutoGeneration(lessonData);
       }
     };
 
     loadLesson();
-  }, [session?.access_token, lessonId, fetchLessonDetail, triggerAutoGeneration, autoGenerationTriggered]);
+  }, [session?.access_token, lessonId, fetchLessonDetail, triggerAutoGeneration, hasAttemptedAutoGeneration]);
 
   const markLessonComplete = async () => {
     if (!lesson || !session?.access_token) return;
