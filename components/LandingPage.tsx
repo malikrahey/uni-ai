@@ -1,7 +1,7 @@
 "use client";
 
 import { TypewriterEffect } from '@/components/TypewriterEffect';
-import { FaGraduationCap, FaBookOpen, FaClipboardList, FaBrain, FaRocket, FaUsers, FaCheck } from 'react-icons/fa6';
+import { FaBookOpen, FaClipboardList, FaBrain, FaRocket, FaUsers, FaCheck } from 'react-icons/fa6';
 import { 
   GraduationCap, BookOpen, ClipboardCheck, Target, Sparkles, Zap
 } from 'lucide-react';
@@ -10,6 +10,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Link as ScrollLink } from 'react-scroll';
 import { VideoModal } from '@/components/VideoModal';
+import Image from 'next/image';
 
 // Updated workflow steps for AI course generation
 const workflowSteps = [
@@ -168,7 +169,7 @@ export default function LandingPage() {
             {/* Header Content */}
             <div className="text-center">
               <div className="flex items-center justify-center mb-6">
-                <FaGraduationCap className="h-12 w-12 text-primary mr-4" />
+                <Image src="/acceluni.png" alt="Acceluni Logo" width={100} height={100} />
                 <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-slate-900 dark:text-white">
                   Acceluni
                 </h1>
