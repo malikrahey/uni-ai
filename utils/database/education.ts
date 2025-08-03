@@ -1,5 +1,4 @@
 import { supabase } from '../supabase';
-import { supabaseAdmin } from '../supabase-admin';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import type {
   Degree,
@@ -63,7 +62,7 @@ export async function getUserDegrees(userId: string, client: SupabaseClient = su
       let totalLessons = 0;
       let completedLessons = 0;
 
-      degree.courses?.forEach(course => {
+      degree.courses?.forEach((course: Course) => {
         const lessonCount = course.lessons?.length || 0;
         const completedCount = course.lessons?.filter(l => l.lesson_status === 'COMPLETED').length || 0;
         totalLessons += lessonCount;
@@ -168,7 +167,7 @@ export async function getStandaloneCourses(userId: string, client: SupabaseClien
   if (error) throw error;
 
   // Calculate progress for each course using the new status field
-  return await Promise.all(courses.map(async (course) => {
+  return await Promise.all(courses.map(async (course: Course) => {
     const lessonCount = course.lessons?.length || 0;
     let progressPercentage = 0;
 
@@ -277,16 +276,19 @@ export async function getLessonById(lessonId: string, userId: string, client: Su
   }
 
   // Transform the tests array into a single test object (lessons should have at most one test)
-  const rawLesson = lesson as any; // Type assertion to handle the tests array from Supabase
-  let testData = rawLesson.tests && rawLesson.tests.length > 0 ? rawLesson.tests[0] : null;
+  const rawLesson = lesson as Lesson & { tests?: Test[]; user_lesson_progress?: UserLessonProgress[] };
+  let testData: Test | undefined = undefined;
 
   // If no test was found through the join, try fetching it directly
-  if (!testData) {
+  if (!rawLesson.tests || rawLesson.tests.length === 0) {
     try {
-      testData = await getTestByLessonId(lessonId, userId, client);
-    } catch (error) {
+      const fetchedTest = await getTestByLessonId(lessonId, userId, client);
+      testData = fetchedTest || undefined;
+    } catch {
       // Not a critical error, continue without test
     }
+  } else {
+    testData = rawLesson.tests[0];
   }
 
   const transformedLesson: Lesson = {
@@ -294,13 +296,13 @@ export async function getLessonById(lessonId: string, userId: string, client: Su
     test: testData,
     user_progress: rawLesson.user_lesson_progress && rawLesson.user_lesson_progress.length > 0 
       ? rawLesson.user_lesson_progress[0] 
-      : null,
+      : undefined,
     is_completed: rawLesson.lesson_status === 'COMPLETED'
   };
 
   // Remove the array properties since we're using singular forms
-  delete (transformedLesson as any).tests;
-  delete (transformedLesson as any).user_lesson_progress;
+  delete (transformedLesson as Lesson & { tests?: Test[]; user_lesson_progress?: UserLessonProgress[] }).tests;
+  delete (transformedLesson as Lesson & { tests?: Test[]; user_lesson_progress?: UserLessonProgress[] }).user_lesson_progress;
 
   return transformedLesson;
 }
