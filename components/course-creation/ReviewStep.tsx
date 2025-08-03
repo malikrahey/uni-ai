@@ -89,7 +89,6 @@ export default function ReviewStep({
           icon: '🎓' // Default degree icon
         };
 
-        console.log('Creating degree with data:', degreeData);
         const newDegree = await createDegree(degreeData);
 
         if (newDegree) {
@@ -115,7 +114,6 @@ export default function ReviewStep({
           start_date: new Date().toISOString()
         };
 
-        console.log('Creating course with data:', courseData);
         const newCourse = await createCourse(courseData);
 
         if (newCourse) {

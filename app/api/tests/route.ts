@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createAuthenticatedClient } from '@/utils/supabase-auth';
+import { getTestByLessonId } from '@/utils/database/education';
 import { createTest } from '@/utils/database/education';
 import type { CreateTestForm } from '@/types/education';
 
@@ -19,36 +20,14 @@ export async function GET(request: NextRequest) {
     }
 
     // Verify user owns the lesson and get the test
-    const { data: test, error: testError } = await supabase
-      .from('tests')
-      .select(`
-        *,
-        lessons!inner(
-          id,
-          courses!inner(user_id)
-        )
-      `)
-      .eq('lesson_id', lessonId)
-      .eq('lessons.courses.user_id', user.id)
-      .single();
+    const test = await getTestByLessonId(lessonId, user.id, supabase);
 
-    if (testError) {
-      if (testError.code === 'PGRST116') {
-        // No test found for this lesson
-        return NextResponse.json({
-          test: null,
-          message: 'No test found for this lesson',
-          success: true
-        });
-      }
-      throw testError;
+    if (!test) {
+      return NextResponse.json(
+        { error: 'Test not found' },
+        { status: 404 }
+      );
     }
-
-    console.log('API Debug - Test fetched directly:', {
-      lessonId,
-      testId: test?.id,
-      testQuestions: test?.questions?.length || 0
-    });
 
     return NextResponse.json({
       test,

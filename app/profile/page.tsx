@@ -29,7 +29,6 @@ function ProfileContent() {
   useEffect(() => {
     if (paymentStatus === 'success') {
       // Could add a toast notification here
-      console.log('Payment successful!');
     }
   }, [paymentStatus]);
 
@@ -38,7 +37,6 @@ function ProfileContent() {
     if (subscription?.stripe_subscription_id) {
       try {
         syncWithStripe(subscription.stripe_subscription_id);
-        console.log('Subscription synced with Stripe successfully');
       } catch (err: unknown) {
         console.error('Error syncing with Stripe:', err);
         setError('Unable to load subscription details');
@@ -56,7 +54,6 @@ function ProfileContent() {
     const attemptRefresh = async () => {
       if (refreshAttempts < MAX_REFRESH_ATTEMPTS) {
         refreshAttempts++;
-        console.log(`Attempting auto-refresh (${refreshAttempts}/${MAX_REFRESH_ATTEMPTS})`);
         await fetchSubscription();
         
         // If still loading, schedule next attempt

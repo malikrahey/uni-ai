@@ -8,25 +8,23 @@ export async function POST(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    console.log('API Debug - Starting POST /api/degrees/:id/generate-courses');
-    
-    // Await params before using its properties (Next.js 15 requirement)
     const { id: degreeId } = await params;
     
     const { supabase, user } = await createAuthenticatedClient(request);
 
-    console.log('Generating courses for degree ID:', degreeId);
+    // Parse request body
+    const body = await request.json();
+    const { forceRegenerate = false, courseCount = 8 } = body;
 
-    // Verify user owns the degree
+    // Verify the degree exists and belongs to the user
     const { data: degree, error: degreeError } = await supabase
       .from('degrees')
-      .select('*')
+      .select('id, name')
       .eq('id', degreeId)
       .eq('user_id', user.id)
       .single();
 
     if (degreeError || !degree) {
-      console.log('Degree verification failed:', degreeError);
       return NextResponse.json(
         { error: 'Degree not found or access denied' },
         { status: 404 }
@@ -39,64 +37,56 @@ export async function POST(
       .select('id')
       .eq('degree_id', degreeId);
 
-    if (existingCourses && existingCourses.length > 0) {
-      console.log('Courses already exist for this degree');
+    if (existingCourses && existingCourses.length > 0 && !forceRegenerate) {
       return NextResponse.json(
-        { error: 'Courses already generated for this degree' },
+        { error: 'Courses already exist for this degree. Use forceRegenerate=true to regenerate.' },
         { status: 400 }
       );
     }
 
-    // Parse request body for generation options
-    const body = await request.json().catch(() => ({}));
-    const { forceRegenerate = false, courseCount = 8 } = body;
+    // Get the next course order
+    const { data: lastCourse } = await supabase
+      .from('courses')
+      .select('course_order')
+      .eq('degree_id', degreeId)
+      .order('course_order', { ascending: false })
+      .limit(1);
 
-    console.log('Generation options:', { forceRegenerate, courseCount });
+    const nextOrder = lastCourse && lastCourse.length > 0 ? lastCourse[0].course_order + 1 : 0;
 
-    // Generate course data using OpenAI
+    // Generate course templates
     const courseTemplates = await generateDegreeOutline(
       degree.name,
-      degree.description,
-      'comprehensive',
       courseCount
     );
-    
-    const generatedCourses = [];
-    let successCount = 0;
 
     // Create courses in database
+    let successCount = 0;
     for (let i = 0; i < courseTemplates.length; i++) {
       const courseTemplate = courseTemplates[i];
       
       try {
-        const courseData = {
+        await createCourse({
           name: courseTemplate.name,
           description: courseTemplate.description,
           icon: courseTemplate.icon,
           degree_id: degreeId,
           is_standalone: false,
           user_id: user.id,
-          course_order: i
-        };
+          course_order: nextOrder + i
+        }, supabase);
 
-        const newCourse = await createCourse(courseData, supabase);
-        generatedCourses.push(newCourse);
         successCount++;
-        
-        console.log(`Created course ${i + 1}: ${courseTemplate.name}`);
       } catch (error) {
         console.error(`Failed to create course ${i + 1}:`, error);
       }
     }
 
-    console.log(`Successfully generated ${successCount} courses`);
-
     return NextResponse.json({
-      courses: generatedCourses,
+      success: true,
       generated: successCount,
-      totalExpected: courseTemplates.length,
-      success: true
-    }, { status: 201 });
+      message: `Successfully generated ${successCount} courses for degree: ${degree.name}`
+    });
 
   } catch (error) {
     console.error('Error in POST /api/degrees/:id/generate-courses:', error);

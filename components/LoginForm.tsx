@@ -31,7 +31,12 @@ export function LoginForm({
     <div className="w-full space-y-8 p-8 bg-surface-light dark:bg-surface-dark rounded-2xl shadow-subtle border border-gray-200 dark:border-gray-700">
       <div className="text-center">
         <div className="flex items-center justify-center gap-2 mb-6">
-          <span className="text-3xl">🎬</span>
+          <Image
+            src="/logo.png"
+            alt="Acceluni Logo"
+            width={32}
+            height={32}
+          />
           <h2 className="text-2xl font-medium text-text dark:text-text-dark">
             Acceluni
           </h2>

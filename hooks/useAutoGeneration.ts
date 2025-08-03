@@ -32,7 +32,6 @@ export function useAutoGeneration() {
       }
 
       const result = await response.json();
-      console.log(`Successfully generated ${result.generated} courses`);
       return result;
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
@@ -69,7 +68,6 @@ export function useAutoGeneration() {
       }
 
       const result = await response.json();
-      console.log(`Successfully generated ${result.generated} lessons`);
       return result;
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
@@ -106,7 +104,6 @@ export function useAutoGeneration() {
       }
 
       const result = await response.json();
-      console.log(`Successfully generated content for lesson`);
       return result;
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
@@ -140,7 +137,6 @@ export function useAutoGeneration() {
       }
 
       const result = await response.json();
-      console.log(`Successfully generated test for lesson`);
       return result;
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';

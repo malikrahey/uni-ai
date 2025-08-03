@@ -30,6 +30,7 @@ export interface Course {
   lesson_count?: number;
   progress_percentage?: number;
   degree?: Degree;
+  is_generated?: boolean; // Track if course has been generated with lessons
 }
 
 export interface Lesson {
@@ -42,6 +43,7 @@ export interface Lesson {
   lesson_order: number;
   created_at: string;
   updated_at: string;
+  lesson_status: 'NOT_STARTED' | 'STARTED' | 'COMPLETED';
   // Computed fields
   test?: Test;
   course?: Course;
@@ -131,6 +133,7 @@ export interface CreateLessonForm {
   icon?: string;
   content: string;
   course_id: string;
+  lesson_status?: 'NOT_STARTED' | 'STARTED' | 'COMPLETED';
 }
 
 export interface CreateTestForm {

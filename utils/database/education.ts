@@ -41,7 +41,11 @@ export async function getUserDegrees(userId: string, client: SupabaseClient = su
         id,
         name,
         description,
-        course_order
+        course_order,
+        lessons(
+          id,
+          lesson_status
+        )
       )
     `)
     .eq('user_id', userId)
@@ -49,29 +53,25 @@ export async function getUserDegrees(userId: string, client: SupabaseClient = su
 
   if (error) throw error;
 
-  // Calculate progress for each degree
+  // Calculate progress for each degree using the new status field
   return await Promise.all(degrees.map(async (degree) => {
     const courseCount = degree.courses?.length || 0;
     let progressPercentage = 0;
 
     if (courseCount > 0) {
-      // Get total lessons and completed lessons for this degree
-      const { data: progressData } = await client
-        .from('user_lesson_progress')
-        .select(`
-          completed,
-          lessons!inner(
-            courses!inner(
-              degree_id
-            )
-          )
-        `)
-        .eq('user_id', userId)
-        .eq('lessons.courses.degree_id', degree.id);
+      // Calculate total lessons and completed lessons for this degree
+      let totalLessons = 0;
+      let completedLessons = 0;
 
-      if (progressData && progressData.length > 0) {
-        const completedLessons = progressData.filter(p => p.completed).length;
-        progressPercentage = Math.round((completedLessons / progressData.length) * 100);
+      degree.courses?.forEach(course => {
+        const lessonCount = course.lessons?.length || 0;
+        const completedCount = course.lessons?.filter(l => l.lesson_status === 'COMPLETED').length || 0;
+        totalLessons += lessonCount;
+        completedLessons += completedCount;
+      });
+
+      if (totalLessons > 0) {
+        progressPercentage = Math.round((completedLessons / totalLessons) * 100);
       }
     }
 
@@ -157,7 +157,8 @@ export async function getStandaloneCourses(userId: string, client: SupabaseClien
       lessons(
         id,
         name,
-        lesson_order
+        lesson_order,
+        lesson_status
       )
     `)
     .eq('user_id', userId)
@@ -166,22 +167,14 @@ export async function getStandaloneCourses(userId: string, client: SupabaseClien
 
   if (error) throw error;
 
-  // Calculate progress for each course
+  // Calculate progress for each course using the new status field
   return await Promise.all(courses.map(async (course) => {
     const lessonCount = course.lessons?.length || 0;
     let progressPercentage = 0;
 
     if (lessonCount > 0) {
-      const { data: progressData } = await client
-        .from('user_lesson_progress')
-        .select('completed, lessons!inner(course_id)')
-        .eq('user_id', userId)
-        .eq('lessons.course_id', course.id);
-
-      if (progressData && progressData.length > 0) {
-        const completedLessons = progressData.filter(p => p.completed).length;
-        progressPercentage = Math.round((completedLessons / progressData.length) * 100);
-      }
+      const completedLessons = course.lessons?.filter(l => l.lesson_status === 'COMPLETED').length || 0;
+      progressPercentage = Math.round((completedLessons / lessonCount) * 100);
     }
 
     return {
@@ -208,7 +201,6 @@ export async function getCourseById(courseId: string, userId: string, client: Su
       *,
       tests(id, questions),
       user_lesson_progress!user_lesson_progress_lesson_id_fkey(
-        completed,
         test_score,
         completed_at
       )
@@ -220,12 +212,18 @@ export async function getCourseById(courseId: string, userId: string, client: Su
 
   const totalLessons = lessons?.length || 0;
   const completedLessons = lessons?.filter(lesson => 
-    lesson.user_lesson_progress?.[0]?.completed
+    lesson.lesson_status === 'COMPLETED'
   ).length || 0;
   const progressPercentage = totalLessons > 0 ? Math.round((completedLessons / totalLessons) * 100) : 0;
 
+  // Add generation status to course
+  const courseWithStatus = {
+    ...course,
+    is_generated: totalLessons > 0
+  };
+
   return {
-    course,
+    course: courseWithStatus,
     lessons: lessons || [],
     userProgress: {
       completedLessons,
@@ -237,9 +235,14 @@ export async function getCourseById(courseId: string, userId: string, client: Su
 
 // Lessons
 export async function createLesson(data: CreateLessonForm & { lesson_order: number }, client: SupabaseClient = supabase): Promise<Lesson> {
+  const lessonData = {
+    ...data,
+    lesson_status: data.lesson_status || 'STARTED' // Default to STARTED when lesson is created
+  };
+
   const { data: lesson, error } = await client
     .from('lessons')
-    .insert([data])
+    .insert([lessonData])
     .select()
     .single();
 
@@ -248,8 +251,6 @@ export async function createLesson(data: CreateLessonForm & { lesson_order: numb
 }
 
 export async function getLessonById(lessonId: string, userId: string, client: SupabaseClient = supabase): Promise<Lesson> {
-  console.log('Database Debug - Starting getLessonById:', { lessonId, userId });
-
   const { data: lesson, error } = await client
     .from('lessons')
     .select(`
@@ -263,7 +264,6 @@ export async function getLessonById(lessonId: string, userId: string, client: Su
         updated_at
       ),
       user_lesson_progress!user_lesson_progress_lesson_id_fkey(
-        completed,
         test_score,
         completed_at
       )
@@ -273,18 +273,8 @@ export async function getLessonById(lessonId: string, userId: string, client: Su
     .single();
 
   if (error) {
-    console.error('Database Debug - Query error:', error);
     throw error;
   }
-
-  console.log('Database Debug - Raw lesson data:', {
-    lessonId: lesson.id,
-    hasTests: !!lesson.tests,
-    testsCount: Array.isArray(lesson.tests) ? lesson.tests.length : 0,
-    testsData: lesson.tests,
-    hasUserProgress: !!lesson.user_lesson_progress,
-    userProgressCount: Array.isArray(lesson.user_lesson_progress) ? lesson.user_lesson_progress.length : 0
-  });
 
   // Transform the tests array into a single test object (lessons should have at most one test)
   const rawLesson = lesson as any; // Type assertion to handle the tests array from Supabase
@@ -292,11 +282,9 @@ export async function getLessonById(lessonId: string, userId: string, client: Su
 
   // If no test was found through the join, try fetching it directly
   if (!testData) {
-    console.log('Database Debug - No test found via join, trying direct fetch...');
     try {
       testData = await getTestByLessonId(lessonId, userId, client);
     } catch (error) {
-      console.log('Database Debug - Direct test fetch also failed:', error);
       // Not a critical error, continue without test
     }
   }
@@ -306,22 +294,13 @@ export async function getLessonById(lessonId: string, userId: string, client: Su
     test: testData,
     user_progress: rawLesson.user_lesson_progress && rawLesson.user_lesson_progress.length > 0 
       ? rawLesson.user_lesson_progress[0] 
-      : null
+      : null,
+    is_completed: rawLesson.lesson_status === 'COMPLETED'
   };
 
   // Remove the array properties since we're using singular forms
   delete (transformedLesson as any).tests;
   delete (transformedLesson as any).user_lesson_progress;
-
-  console.log('Database Debug - Final lesson data:', {
-    lessonId: rawLesson.id,
-    rawTests: rawLesson.tests,
-    transformedTest: transformedLesson.test,
-    hasTest: !!transformedLesson.test,
-    testQuestions: transformedLesson.test?.questions?.length || 0,
-    userProgress: transformedLesson.user_progress,
-    hasUserProgress: !!transformedLesson.user_progress
-  });
 
   return transformedLesson;
 }
@@ -339,36 +318,24 @@ export async function createTest(data: CreateTestForm, client: SupabaseClient = 
 }
 
 export async function getTestByLessonId(lessonId: string, userId: string, client: SupabaseClient = supabase): Promise<Test | null> {
-  console.log('Database Debug - Fetching test for lesson:', { lessonId, userId });
-
   const { data: test, error } = await client
     .from('tests')
     .select(`
       *,
       lessons!inner(
-        id,
         courses!inner(user_id)
       )
     `)
     .eq('lesson_id', lessonId)
     .eq('lessons.courses.user_id', userId)
-    .single();
+    .maybeSingle();
 
   if (error) {
     if (error.code === 'PGRST116') {
-      // No test found for this lesson
-      console.log('Database Debug - No test found for lesson:', lessonId);
       return null;
     }
-    console.error('Database Debug - Error fetching test:', error);
     throw error;
   }
-
-  console.log('Database Debug - Test found:', {
-    lessonId,
-    testId: test.id,
-    questionsCount: test.questions?.length || 0
-  });
 
   return test;
 }
@@ -414,20 +381,32 @@ export async function submitTest(submission: TestSubmission, userId: string, cli
   const score = Math.round((correctAnswers / questions.length) * 100);
   const passed = score >= 70;
 
-  // Update user progress
+  // Update user progress for test score
   const { error: progressError } = await client
     .from('user_lesson_progress')
     .upsert([
       {
         user_id: userId,
         lesson_id: submission.lesson_id,
-        completed: passed,
         test_score: score,
         completed_at: passed ? new Date().toISOString() : null
       }
     ]);
 
   if (progressError) throw progressError;
+
+  // Update lesson status if test was passed
+  if (passed) {
+    const { error: lessonUpdateError } = await client
+      .from('lessons')
+      .update({
+        lesson_status: 'COMPLETED',
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', submission.lesson_id);
+
+    if (lessonUpdateError) throw lessonUpdateError;
+  }
 
   return {
     score,
@@ -445,16 +424,19 @@ export async function getHomeContent(userId: string, client: SupabaseClient = su
     getStandaloneCourses(userId, client)
   ]);
 
-  // Get user progress stats
-  const { data: progressData } = await client
-    .from('user_lesson_progress')
-    .select('completed, test_score')
-    .eq('user_id', userId);
+  // Get user progress stats using the new status field
+  const { data: lessons } = await client
+    .from('lessons')
+    .select('lesson_status, user_lesson_progress(test_score)')
+    .eq('courses.user_id', userId);
 
-  const totalLessonsCompleted = progressData?.filter(p => p.completed).length || 0;
-  const totalTestsCompleted = progressData?.filter(p => p.test_score !== null).length || 0;
+  const totalLessonsCompleted = lessons?.filter(l => l.lesson_status === 'COMPLETED').length || 0;
+  const totalTestsCompleted = lessons?.filter(l => l.user_lesson_progress?.[0]?.test_score !== null).length || 0;
   const averageTestScore = totalTestsCompleted > 0 
-    ? Math.round(progressData!.reduce((sum, p) => sum + (p.test_score || 0), 0) / totalTestsCompleted)
+    ? Math.round(lessons!.reduce((sum, l) => {
+        const testScore = l.user_lesson_progress?.[0]?.test_score || 0;
+        return sum + testScore;
+      }, 0) / totalTestsCompleted)
     : 0;
 
   return {
@@ -471,15 +453,25 @@ export async function getHomeContent(userId: string, client: SupabaseClient = su
 // Progress tracking
 export async function markLessonComplete(lessonId: string, userId: string, client: SupabaseClient = supabase): Promise<void> {
   const { error } = await client
-    .from('user_lesson_progress')
-    .upsert([
-      {
-        user_id: userId,
-        lesson_id: lessonId,
-        completed: true,
-        completed_at: new Date().toISOString()
-      }
-    ]);
+    .from('lessons')
+    .update({
+      lesson_status: 'COMPLETED',
+      updated_at: new Date().toISOString()
+    })
+    .eq('id', lessonId);
+
+  if (error) throw error;
+}
+
+export async function markLessonStarted(lessonId: string, userId: string, client: SupabaseClient = supabase): Promise<void> {
+  const { error } = await client
+    .from('lessons')
+    .update({
+      lesson_status: 'STARTED',
+      updated_at: new Date().toISOString()
+    })
+    .eq('id', lessonId)
+    .eq('lesson_status', 'NOT_STARTED'); // Only update if not already started
 
   if (error) throw error;
 }

@@ -95,7 +95,10 @@ export default function TestTakingPage() {
           'Authorization': `Bearer ${session.access_token}`,
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ answers }),
+        body: JSON.stringify({ 
+          lesson_id: testId, // testId is actually the lesson ID
+          answers 
+        }),
       });
 
       if (!response.ok) {
@@ -105,6 +108,13 @@ export default function TestTakingPage() {
 
       const result = await response.json();
       setTestResult(result.result);
+      
+      // If test was passed, navigate back to course page with refresh
+      if (result.result.passed) {
+        setTimeout(() => {
+          router.push(`/courses/${testId}?refresh=true`);
+        }, 2000); // Give user 2 seconds to see the result
+      }
     } catch (err) {
       console.error('Error submitting test:', err);
       setError(err instanceof Error ? err.message : 'Failed to submit test');

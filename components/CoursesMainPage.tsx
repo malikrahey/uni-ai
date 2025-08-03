@@ -1,10 +1,12 @@
 "use client";
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { useAuth } from '@/contexts/AuthContext';
 import { useRouter } from 'next/navigation';
 import { useHomeContent } from '@/hooks/useHomeContent';
+import { useSubscription } from '@/hooks/useSubscription';
+import { useTrialStatus } from '@/hooks/useTrialStatus';
 import { DegreeCard } from './DegreeCard';
 import { 
   Plus, 
@@ -16,67 +18,23 @@ import {
   Filter,
   AlertCircle,
   Loader,
-  RefreshCw
+  RefreshCw,
+  Lock
 } from 'lucide-react';
 import Link from 'next/link';
 
 export default function CoursesMainPage() {
-  const { user, session } = useAuth();
+  const { user } = useAuth();
   const router = useRouter();
   const { degrees, standaloneCourses, userProgress, isLoading, error, refetch } = useHomeContent();
+  const { subscription, isLoading: subscriptionLoading } = useSubscription();
+  const { isInTrial, isLoading: trialLoading } = useTrialStatus();
   const [searchTerm, setSearchTerm] = useState("");
   const [showFilters, setShowFilters] = useState(false);
-  const [debugInfo, setDebugInfo] = useState<{
-    hasUser?: boolean;
-    hasSession?: boolean;
-    tokenLength?: number;
-    userError?: string;
-    sessionError?: string;
-  } | null>(null);
 
-  // Debug function to test authentication
-  const testAuth = useCallback(async () => {
-    try {
-      console.log('Frontend Debug - User:', user);
-      console.log('Frontend Debug - Session:', session);
-      
-      const headers: Record<string, string> = {
-        'Content-Type': 'application/json',
-      };
-      
-      if (session?.access_token) {
-        headers['Authorization'] = `Bearer ${session.access_token}`;
-        console.log('Adding auth header with token');
-      }
-      
-      const response = await fetch('/api/test-auth', { headers });
-      const data = await response.json();
-      console.log('Auth Test Response:', data);
-      setDebugInfo(data);
-    } catch (error) {
-      console.error('Auth test failed:', error);
-    }
-  }, [user, session]);
-
-  // // Check database setup
-  // const checkDatabaseSetup = async () => {
-  //   try {
-  //     const response = await fetch('/api/setup-db');
-  //     const data = await response.json();
-  //     console.log('Database Setup Response:', data);
-  //     setDbSetupInfo(data);
-  //   } catch (error) {
-  //     console.error('Database setup check failed:', error);
-  //   }
-  // };
-
-  // Test auth and db setup on component mount
-  useEffect(() => {
-    if (user) {
-      testAuth();
-      // checkDatabaseSetup();
-    }
-  }, [user, session, testAuth]);
+  // Check if user has access to create content (active subscription or valid trial)
+  const hasCreateAccess = subscription || isInTrial;
+  const isCheckingAccess = subscriptionLoading || trialLoading;
 
   // Filter content based on search term
   const filteredDegrees = degrees.filter(degree =>
@@ -102,37 +60,6 @@ export default function CoursesMainPage() {
             {error}
           </p>
           
-          {/* Debug Info */}
-          {debugInfo && (
-            <div className="mt-4 p-3 bg-gray-100 dark:bg-gray-800 rounded text-xs text-left">
-              <div className="font-semibold mb-2">Auth Debug:</div>
-              <div>Has User: {debugInfo.hasUser ? 'Yes' : 'No'}</div>
-              <div>Has Session: {debugInfo.hasSession ? 'Yes' : 'No'}</div>
-              <div>Has Token: {session?.access_token ? 'Yes' : 'No'}</div>
-              <div>Token Length: {debugInfo.tokenLength || 'N/A'}</div>
-              {debugInfo.userError && <div>User Error: {debugInfo.userError}</div>}
-              {debugInfo.sessionError && <div>Session Error: {debugInfo.sessionError}</div>}
-            </div>
-          )}
-
-          {/* Database Setup Info */}
-          {/* {dbSetupInfo && (
-            <div className="mt-4 p-3 bg-blue-100 dark:bg-blue-900/30 rounded text-xs text-left">
-              <div className="font-semibold mb-2">Database Status:</div>
-              <div>Tables Exist: {dbSetupInfo.tablesExist ? 'Yes' : 'No'}</div>
-              {dbSetupInfo.missingTables && dbSetupInfo.missingTables.length > 0 && (
-                <div>Missing Tables: {dbSetupInfo.missingTables.join(', ')}</div>
-              )}
-              {dbSetupInfo.message && <div>Message: {dbSetupInfo.message}</div>}
-              {dbSetupInfo.setupInstructions && (
-                <div className="mt-2 p-2 bg-yellow-100 dark:bg-yellow-900/30 rounded">
-                  <strong>Setup Required:</strong><br />
-                  {dbSetupInfo.setupInstructions}
-                </div>
-              )}
-            </div>
-          )} */}
-          
           <div className="flex gap-2 justify-center mt-4 flex-wrap">
             <button
               onClick={() => refetch()}
@@ -141,19 +68,6 @@ export default function CoursesMainPage() {
               <RefreshCw className="h-4 w-4 inline mr-2" />
               Retry
             </button>
-            <button
-              onClick={testAuth}
-              className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors text-sm"
-            >
-              Test Auth
-            </button>
-            {/* <button
-              onClick={checkDatabaseSetup}
-              className="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors text-sm"
-            >
-              <Database className="h-4 w-4 inline mr-2" />
-              Check DB
-            </button> */}
           </div>
         </div>
       </div>
@@ -236,13 +150,37 @@ export default function CoursesMainPage() {
               <span>Filters</span>
             </button>
             
-            <Link
-              href="/course-creation"
-              className="flex items-center space-x-2 px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors"
-            >
-              <Plus className="h-4 w-4" />
-              <span>Create New</span>
-            </Link>
+            {isCheckingAccess ? (
+              <div className="flex items-center space-x-2 px-4 py-2 bg-slate-300 dark:bg-slate-600 text-slate-500 dark:text-slate-400 rounded-lg cursor-not-allowed">
+                <Loader className="h-4 w-4 animate-spin" />
+                <span>Checking access...</span>
+              </div>
+            ) : hasCreateAccess ? (
+              <Link
+                href="/course-creation"
+                className="flex items-center space-x-2 px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors"
+              >
+                <Plus className="h-4 w-4" />
+                <span>Create New</span>
+              </Link>
+            ) : (
+              <div className="group relative">
+                <button
+                  disabled
+                  className="flex items-center space-x-2 px-4 py-2 bg-slate-300 dark:bg-slate-600 text-slate-500 dark:text-slate-400 rounded-lg cursor-not-allowed"
+                  title="Subscription required to create new content"
+                >
+                  <Lock className="h-4 w-4" />
+                  <span>Create New</span>
+                </button>
+                <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900 text-sm rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-10">
+                  <div className="relative">
+                    Subscription required to create new content
+                    <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-slate-900 dark:border-t-slate-100"></div>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         </div>
 
@@ -365,13 +303,37 @@ export default function CoursesMainPage() {
                     : 'Create your first degree or course to begin organizing your academic journey.'
                   }
                 </p>
-                <Link
-                  href="/course-creation"
-                  className="inline-flex items-center space-x-2 px-6 py-3 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors"
-                >
-                  <Plus className="h-4 w-4" />
-                  <span>Create Your First Course</span>
-                </Link>
+                {isCheckingAccess ? (
+                  <div className="inline-flex items-center space-x-2 px-6 py-3 bg-slate-300 dark:bg-slate-600 text-slate-500 dark:text-slate-400 rounded-lg cursor-not-allowed">
+                    <Loader className="h-4 w-4 animate-spin" />
+                    <span>Checking access...</span>
+                  </div>
+                ) : hasCreateAccess ? (
+                  <Link
+                    href="/course-creation"
+                    className="inline-flex items-center space-x-2 px-6 py-3 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors"
+                  >
+                    <Plus className="h-4 w-4" />
+                    <span>Create Your First Course</span>
+                  </Link>
+                ) : (
+                  <div className="group relative inline-block">
+                    <button
+                      disabled
+                      className="inline-flex items-center space-x-2 px-6 py-3 bg-slate-300 dark:bg-slate-600 text-slate-500 dark:text-slate-400 rounded-lg cursor-not-allowed"
+                      title="Subscription required to create new content"
+                    >
+                      <Lock className="h-4 w-4" />
+                      <span>Create Your First Course</span>
+                    </button>
+                    <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900 text-sm rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-10">
+                      <div className="relative">
+                        Subscription required to create new content
+                        <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-slate-900 dark:border-t-slate-100"></div>
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
             )}
           </>

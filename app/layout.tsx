@@ -1,5 +1,3 @@
-'use client';
-
 import { Geist } from "next/font/google";
 import "./globals.css";
 import { AuthProvider } from '@/contexts/AuthContext';
@@ -10,6 +8,13 @@ import { Analytics } from "@vercel/analytics/react"
 // import { PostHogErrorBoundary } from '@/components/PostHogErrorBoundary';
 
 const geist = Geist({ subsets: ['latin'] });
+
+import { Metadata } from 'next'
+
+export const metadata: Metadata = {
+  title: "Acceluni - AI-Powered University Course Planning",
+  description: "Generate complete degree roadmaps, create interactive lessons for every course, and practice with custom tests. Your personal AI study companion for university success.",
+}; 
 
 export default function RootLayout({
   children,

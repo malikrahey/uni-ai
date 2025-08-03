@@ -67,13 +67,6 @@ export default function LessonDetailPage() {
       }
 
       const result = await response.json();
-      console.log('Fetched lesson data:', {
-        lessonId: result.lesson?.id,
-        hasTest: !!result.lesson?.test,
-        testId: result.lesson?.test?.id,
-        testQuestions: result.lesson?.test?.questions?.length || 0,
-        testData: result.lesson?.test
-      });
       setLesson(result.lesson);
       return result.lesson;
     } catch (err) {
@@ -135,6 +128,21 @@ export default function LessonDetailPage() {
       if (lessonData && !hasAttemptedAutoGeneration) {
         await triggerAutoGeneration(lessonData);
       }
+      
+      // Mark lesson as started if it's not already started or completed
+      if (lessonData && lessonData.lesson_status === 'NOT_STARTED') {
+        try {
+          await fetch(`/api/lessons/${lessonId}/start`, {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${session.access_token}`,
+              'Content-Type': 'application/json',
+            },
+          });
+        } catch (err) {
+          console.error('Error marking lesson as started:', err);
+        }
+      }
     };
 
     loadLesson();
@@ -153,8 +161,8 @@ export default function LessonDetailPage() {
       });
 
       if (response.ok) {
-        // Simply reload to get updated data rather than complex state manipulation
-        window.location.reload();
+        // Navigate back to course page with refresh parameter
+        router.push(`/courses/${lesson.course_id}?refresh=true`);
       }
     } catch (err) {
       console.error('Error marking lesson complete:', err);
@@ -174,10 +182,6 @@ export default function LessonDetailPage() {
       const updatedLesson = await fetchLessonDetail();
       if (updatedLesson) {
         setLesson(updatedLesson);
-        console.log('Updated lesson after regeneration:', {
-          hasTest: !!updatedLesson.test,
-          testQuestions: updatedLesson.test?.questions?.length || 0
-        });
       }
     } catch (error) {
       console.error('Content regeneration failed:', error);
@@ -199,10 +203,6 @@ export default function LessonDetailPage() {
       const updatedLesson = await fetchLessonDetail();
       if (updatedLesson) {
         setLesson(updatedLesson);
-        console.log('Updated lesson test after regeneration:', {
-          hasTest: !!updatedLesson.test,
-          testQuestions: updatedLesson.test?.questions?.length || 0
-        });
       }
     } catch (error) {
       console.error('Test regeneration failed:', error);
@@ -244,6 +244,7 @@ export default function LessonDetailPage() {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
+          lesson_id: lesson.id,
           answers: testAnswers
         })
       });
@@ -260,6 +261,13 @@ export default function LessonDetailPage() {
       const updatedLesson = await fetchLessonDetail();
       if (updatedLesson) {
         setLesson(updatedLesson);
+      }
+      
+      // If test was passed, navigate back to course page with refresh
+      if (result.result.passed) {
+        setTimeout(() => {
+          router.push(`/courses/${lesson.course_id}?refresh=true`);
+        }, 2000); // Give user 2 seconds to see the result
       }
     } catch (error) {
       console.error('Error submitting test:', error);
@@ -337,7 +345,7 @@ export default function LessonDetailPage() {
     );
   }
 
-  const isCompleted = lesson.user_progress?.completed || false;
+  const isCompleted = lesson.lesson_status === 'COMPLETED';
   const hasTest = lesson.test != null;
   const testScore = lesson.user_progress?.test_score;
   const isEmpty = !lesson.content || 
@@ -548,20 +556,6 @@ export default function LessonDetailPage() {
                 </div>
               )}
             </motion.div>
-
-            {/* Debug Info - Temporary */}
-            {process.env.NODE_ENV === 'development' && (
-              <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-700 rounded-lg p-4 mt-6">
-                <h4 className="font-semibold text-yellow-800 dark:text-yellow-400 mb-2">Debug Info:</h4>
-                <div className="text-sm text-yellow-700 dark:text-yellow-300 space-y-1">
-                  <div>hasTest: {hasTest.toString()}</div>
-                  <div>isEmpty: {isEmpty.toString()}</div>
-                  <div>lesson.test: {lesson.test ? 'exists' : 'null'}</div>
-                  <div>test questions: {lesson.test?.questions?.length || 0}</div>
-                  <div>testScore: {testScore || 'none'}</div>
-                </div>
-              </div>
-            )}
 
             {/* Inline Test Section */}
             {hasTest && (

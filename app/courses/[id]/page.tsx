@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { useParams, useRouter } from 'next/navigation';
+import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { useAuth } from '@/contexts/AuthContext';
 import { useAutoGeneration } from '@/hooks/useAutoGeneration';
@@ -22,6 +22,7 @@ import type { CourseDetailResponse } from '@/types/education';
 export default function CourseDetailPage() {
   const params = useParams();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { session } = useAuth();
   const { generateLessons, isGenerating } = useAutoGeneration();
   const [courseData, setCourseData] = useState<CourseDetailResponse | null>(null);
@@ -58,7 +59,6 @@ export default function CourseDetailPage() {
       if (result.lessons.length === 0 && !isGenerating && !hasAttemptedGeneration) {
         setHasAttemptedGeneration(true);
         try {
-          console.log('Auto-generating lessons for course:', courseId);
           await generateLessons(courseId, { lessonCount: 12 });
           
           // Fetch updated course data after generation
@@ -86,11 +86,31 @@ export default function CourseDetailPage() {
     }
   }, [session?.access_token, courseId, isGenerating, hasAttemptedGeneration, generateLessons]);
 
+  // Add a refresh function that can be called to update course data
+  const refreshCourseData = useCallback(async () => {
+    if (!session?.access_token || !courseId) return;
+    
+    try {
+      const response = await fetch(`/api/courses/${courseId}`, {
+        headers: {
+          'Authorization': `Bearer ${session.access_token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        setCourseData(result);
+      }
+    } catch (err) {
+      console.error('Error refreshing course data:', err);
+    }
+  }, [session?.access_token, courseId]);
+
   const handleGenerateLessons = useCallback(async () => {
     if (!session?.access_token || !courseId) return;
     
     try {
-      console.log('Manually generating lessons for course:', courseId);
       setError(null);
       
       await generateLessons(courseId, { lessonCount: 12 });
@@ -119,6 +139,26 @@ export default function CourseDetailPage() {
     isInitialized.current = true;
     fetchCourseDetail();
   }, [session?.access_token, courseId, fetchCourseDetail]);
+
+  // Handle refresh parameter from lesson completion
+  useEffect(() => {
+    if (searchParams.get('refresh') === 'true' && courseData) {
+      refreshCourseData();
+      // Remove the refresh parameter from URL
+      router.replace(`/courses/${courseId}`);
+    }
+  }, [searchParams, courseData, refreshCourseData, router, courseId]);
+
+  // Add periodic refresh to update completion status
+  useEffect(() => {
+    if (!courseData) return;
+    
+    const interval = setInterval(() => {
+      refreshCourseData();
+    }, 30000); // Refresh every 30 seconds
+    
+    return () => clearInterval(interval);
+  }, [courseData, refreshCourseData]);
 
   if (isLoading && !isGenerating) {
     return (
@@ -216,35 +256,55 @@ export default function CourseDetailPage() {
                   {course.description}
                 </p>
                 
-                {course.degree_id && (
-                  <div className="flex items-center space-x-2 mt-2">
+                <div className="flex items-center space-x-4 mt-2">
+                  {course.degree_id && (
                     <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200">
                       Part of a degree program
                     </span>
-                  </div>
-                )}
+                  )}
+                  {course.is_generated ? (
+                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">
+                      Generated
+                    </span>
+                  ) : (
+                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200">
+                      Not Generated
+                    </span>
+                  )}
+                </div>
               </div>
             </div>
 
-            {lessons && lessons.length === 0 && (
+            <div className="flex items-center space-x-3">
               <button
-                onClick={handleGenerateLessons}
-                disabled={isGenerating}
-                className="flex items-center space-x-2 px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                onClick={refreshCourseData}
+                disabled={isLoading}
+                className="flex items-center space-x-2 px-3 py-2 border border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-300 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors disabled:opacity-50"
               >
-                {isGenerating ? (
-                  <>
-                    <Loader className="h-4 w-4 animate-spin" />
-                    <span>Generating...</span>
-                  </>
-                ) : (
-                  <>
-                    <Sparkles className="h-4 w-4" />
-                    <span>Generate Lessons</span>
-                  </>
-                )}
+                <Loader className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
+                <span>Refresh</span>
               </button>
-            )}
+              
+              {lessons && lessons.length === 0 && (
+                <button
+                  onClick={handleGenerateLessons}
+                  disabled={isGenerating}
+                  className="flex items-center space-x-2 px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {isGenerating ? (
+                    <>
+                      <Loader className="h-4 w-4 animate-spin" />
+                      <span>Generating...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Sparkles className="h-4 w-4" />
+                      <span>Generate Lessons</span>
+                    </>
+                  )}
+                </button>
+              )}
+            </div>
           </div>
 
           {/* Progress Summary */}
@@ -326,8 +386,10 @@ export default function CourseDetailPage() {
         {lessons && lessons.length > 0 ? (
           <div className="space-y-4">
             {lessons.map((lesson, index) => {
-              const isCompleted = lesson.user_progress?.completed || false;
+              const isCompleted = lesson.lesson_status === 'COMPLETED';
               const hasTest = lesson.test != null;
+              const testScore = lesson.user_progress?.test_score;
+              const completedViaTest = testScore && testScore >= 70;
               
               return (
                 <motion.div
@@ -374,10 +436,18 @@ export default function CourseDetailPage() {
                               <span>Test Available</span>
                             </div>
                           )}
-                          {lesson.user_progress?.test_score && (
+                          {testScore && (
+                            <div className={`flex items-center space-x-1 text-xs ${
+                              testScore >= 70 ? 'text-green-600' : 'text-orange-600'
+                            }`}>
+                              <CheckCircle className="h-3 w-3" />
+                              <span>Score: {testScore}%</span>
+                            </div>
+                          )}
+                          {completedViaTest && (
                             <div className="flex items-center space-x-1 text-xs text-green-600">
                               <CheckCircle className="h-3 w-3" />
-                              <span>Score: {lesson.user_progress.test_score}%</span>
+                              <span>Completed via Test</span>
                             </div>
                           )}
                         </div>
@@ -388,7 +458,7 @@ export default function CourseDetailPage() {
                     <div className="flex items-center space-x-3">
                       <div className="text-right">
                         <div className="text-sm font-medium text-slate-700 dark:text-slate-300">
-                          {isCompleted ? 'Completed' : 'Not Started'}
+                          {isCompleted ? 'Completed' : lesson.lesson_status === 'STARTED' ? 'In Progress' : 'Not Started'}
                         </div>
                         <div className="text-xs text-slate-500 dark:text-slate-400">
                           Lesson {index + 1} of {lessons.length}
@@ -397,6 +467,8 @@ export default function CourseDetailPage() {
                       <div className="flex-shrink-0">
                         {isCompleted ? (
                           <CheckCircle className="h-6 w-6 text-green-500" />
+                        ) : lesson.lesson_status === 'STARTED' ? (
+                          <div className="w-6 h-6 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
                         ) : (
                           <Play className="h-6 w-6 text-slate-400" />
                         )}

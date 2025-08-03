@@ -6,7 +6,7 @@ import { useRouter, usePathname } from 'next/navigation';
 import Link from 'next/link';
 import { useSubscription } from '@/hooks/useSubscription';
 import { useTrialStatus } from '@/hooks/useTrialStatus';
-import { FaGraduationCap } from 'react-icons/fa6';
+import Image from 'next/image';
 // import { supabase } from '@/utils/supabase';
 
 // TopBar component handles user profile display and navigation
@@ -53,7 +53,7 @@ export default function TopBar() {
     <div className="w-full bg-surface-light dark:bg-surface-dark border-b border-gray-200 dark:border-gray-700">
       <div className="max-w-7xl mx-auto flex justify-between items-center px-4 py-3">
         <Link href="/" className="text-md sm:text-lg font-medium text-slate-700 dark:text-slate-200 flex items-center gap-3 hover:opacity-80 transition-opacity">
-          <FaGraduationCap className="h-8 w-8 text-primary" />
+          <Image src="/logo.png" alt="Acceluni Logo" width={32} height={32} />
           <span className="font-bold text-xl text-slate-800 dark:text-slate-100">Acceluni</span>
         </Link>
 

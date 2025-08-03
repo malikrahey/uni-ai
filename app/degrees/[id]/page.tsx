@@ -33,7 +33,6 @@ export default function DegreeDetailPage() {
 
     try {
       setIsGeneratingCourses(true);
-      console.log('Auto-generating courses for degree:', degreeId);
 
       const response = await fetch(`/api/degrees/${degreeId}/generate-courses`, {
         method: 'POST',
@@ -50,9 +49,6 @@ export default function DegreeDetailPage() {
         const errorData = await response.json();
         throw new Error(errorData.error || 'Failed to generate courses');
       }
-
-      const result = await response.json();
-      console.log(`Successfully generated ${result.generated} courses`);
 
       // Refresh degree data to show new courses by calling the API directly
       if (session?.access_token) {

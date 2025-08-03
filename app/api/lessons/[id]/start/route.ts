@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createAuthenticatedClient } from '@/utils/supabase-auth';
-import { getLessonById, getTestByLessonId } from '@/utils/database/education';
+import { markLessonStarted } from '@/utils/database/education';
 
-export async function GET(
+export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
@@ -12,31 +12,37 @@ export async function GET(
     
     const { supabase, user } = await createAuthenticatedClient(request);
 
-    // Get lesson details
-    const lesson = await getLessonById(id, user.id, supabase);
+    // Verify user owns the lesson (through course ownership)
+    const { data: lesson, error: lessonError } = await supabase
+      .from('lessons')
+      .select(`
+        id,
+        courses!inner(
+          id,
+          user_id
+        )
+      `)
+      .eq('id', id)
+      .eq('courses.user_id', user.id)
+      .single();
 
-    // If no test was found through the join, try fetching it directly
-    if (!lesson.test) {
-      try {
-        const test = await getTestByLessonId(id, user.id, supabase);
-        if (test) {
-          lesson.test = test;
-        }
-      } catch {
-        // Not a critical error, continue without test
-      }
+    if (lessonError || !lesson) {
+      return NextResponse.json(
+        { error: 'Lesson not found or access denied' },
+        { status: 404 }
+      );
     }
 
+    // Mark lesson as started
+    await markLessonStarted(id, user.id, supabase);
+
     return NextResponse.json({
-      lesson,
-      debug: {
-        hasTest: !!lesson.test,
-        testQuestions: lesson.test?.questions?.length || 0
-      }
+      message: 'Lesson marked as started',
+      success: true
     });
 
   } catch (error) {
-    console.error('Error in GET /api/lessons/[id]:', error);
+    console.error('Error in POST /api/lessons/[id]/start:', error);
     
     if (error instanceof Error && error.message.includes('Authorization header missing')) {
       return NextResponse.json(
