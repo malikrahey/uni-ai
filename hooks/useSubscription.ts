@@ -49,9 +49,10 @@ export function useSubscription() {
         .eq('user_id', user.id)
         .in('status', ['active', 'trialing'])
         .order('created_at', { ascending: false })
-        .maybeSingle();
+        .limit(1)
+        .single();
 
-      if (error) throw error;
+      if (error && error.code !== 'PGRST116') throw error;
 
       const isValid = data && 
         ['active', 'trialing'].includes(data.status) && 

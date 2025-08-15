@@ -45,9 +45,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         .eq('user_id', userId)
         .in('status', ['active', 'trialing'])
         .order('created_at', { ascending: false })
-        .maybeSingle();
+        .limit(1)
+        .single();
       
-      if (error) {
+      if (error && error.code !== 'PGRST116') {
         console.error('Subscription check error:', error);
         setIsSubscriber(false);
         return;

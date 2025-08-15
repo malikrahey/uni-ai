@@ -37,7 +37,7 @@ export function LoginForm({
             width={32}
             height={32}
           />
-          <h2 className="text-2xl font-medium text-text dark:text-text-dark">
+          <h2 className="text-2xl font-medium text-gray-900 dark:text-white">
             Acceluni
           </h2>
         </div>
@@ -52,7 +52,7 @@ export function LoginForm({
       <div className="mt-6 space-y-4">
         <button
           onClick={onGoogleSignIn}
-          className="w-full py-2.5 px-4 border border-gray-200 dark:border-gray-700 rounded-full shadow-subtle text-text dark:text-text-dark bg-surface-light dark:bg-surface-dark hover:bg-neutral dark:hover:bg-neutral-dark transition-all flex items-center justify-center"
+          className="w-full py-2.5 px-4 border border-gray-200 dark:border-gray-700 rounded-full shadow-subtle text-gray-900 dark:text-white bg-surface-light dark:bg-surface-dark hover:bg-neutral dark:hover:bg-neutral-dark transition-all flex items-center justify-center"
         >
           <Image
             src="/Google-Logo.png"

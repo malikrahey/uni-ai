@@ -36,12 +36,17 @@ export const config = {
 };
 
 async function checkExistingSubscription(customerId: string): Promise<boolean> {
-  const { data: existingSubs } = await supabaseAdmin
+  const { data: existingSubs, error } = await supabaseAdmin
     .from('subscriptions')
     .select('*')
     .eq('stripe_customer_id', customerId)
     .in('status', ['active', 'trialing'])
+    .limit(1)
     .single();
+
+  if (error && error.code !== 'PGRST116') {
+    console.error('Error checking existing subscription:', error);
+  }
 
   return !!existingSubs;
 }

@@ -23,7 +23,8 @@ export function useTrialStatus() {
           .from('subscriptions')
           .select('status')
           .eq('user_id', user.id)
-          .maybeSingle();
+          .limit(1)
+          .single();
 
         // If user has an active subscription, skip trial creation
         if (subscription?.status === 'active' || subscription?.status === 'trialing') {
@@ -40,7 +41,8 @@ export function useTrialStatus() {
           .from('user_trials')
           .select('trial_end_time, is_trial_used')
           .eq('user_id', user.id)
-          .maybeSingle();
+          .limit(1)
+          .single();
 
         if (trialError && trialError.code !== 'PGRST116') { // PGRST116 is "not found" error
           throw trialError;

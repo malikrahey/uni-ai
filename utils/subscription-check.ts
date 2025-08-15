@@ -37,9 +37,10 @@ export async function checkSubscriptionAccess(
       .eq('user_id', userId)
       .in('status', ['active', 'trialing'])
       .order('created_at', { ascending: false })
-      .maybeSingle();
+      .limit(1)
+      .single();
 
-    if (subError) {
+    if (subError && subError.code !== 'PGRST116') {
       console.error('Subscription check error:', subError);
     }
 
@@ -69,7 +70,8 @@ export async function checkSubscriptionAccess(
       .from('user_trials')
       .select('trial_end_time, is_trial_used')
       .eq('user_id', userId)
-      .maybeSingle();
+      .limit(1)
+      .single();
 
     if (trialError && trialError.code !== 'PGRST116') {
       console.error('Trial check error:', trialError);
